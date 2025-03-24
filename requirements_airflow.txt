@@ -1,0 +1,13 @@
+dataverk-airflow==1.7.2
+google-cloud-bigquery==3.26.0
+google-cloud-secret-manager==2.20.2
+ipykernel==6.29.5
+nbclient==0.10.0
+nbformat==5.10.4
+numpy==2.0.2
+oracledb==2.5.0
+pandas==2.2.3
+pandas-gbq==0.24.0
+plotly==5.24.1
+pyYAML==6.0.2 
+tabulate==0.9.0
