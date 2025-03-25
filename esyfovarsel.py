@@ -32,7 +32,7 @@ pio.renderers.default = ("plotly_mimetype+" + "notebook_connected+" + "iframe_co
 
 # %%
 project = 'teamsykefravr-prod-7e29'
-d_sql = get_dict("/home/user/esyfovarsel_analyse/esyfovarsel.sql")
+d_sql = get_dict("esyfovarsel.sql")
 
 # %%
 #| echo: false
