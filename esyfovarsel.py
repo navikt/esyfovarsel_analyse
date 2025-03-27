@@ -70,8 +70,7 @@ gr1 = df.groupby("år").type.value_counts().reset_index(name = 'antall')
 
 # Lag stolpediagram
 fig = px.bar(gr1, x='år', y='antall', color='type',color_discrete_sequence = px.colors.qualitative.Dark24)
-fig.update_layout(xaxis=dict(type="category"),
-                  width=1000)
+fig.update_layout(xaxis=dict(type="category"))
 
 # %% [markdown]
 
@@ -86,8 +85,7 @@ gr2 = type_df.groupby('år').size().reset_index(name='antall')
 
 # Lag stolpediagram
 fig = px.bar(gr2, x='år', y='antall')
-fig.update_layout(xaxis=dict(type="category"),
-                  width=1000)
+fig.update_layout(xaxis=dict(type="category"))
 
 # %% [markdown]
 
@@ -99,8 +97,7 @@ gr3.columns = ['type', 'antall']
 
 # Lag stolpediagram
 fig = px.bar(gr3, x='type', y='antall',  color='type', color_discrete_sequence=px.colors.qualitative.Dark24)
-fig.update_layout(xaxis=dict(type="category"),
-                  width=1000)
+fig.update_layout(xaxis=dict(type="category"))
 
 # Vis diagrammet
 fig.show()
@@ -116,8 +113,7 @@ hourly_counts = df.groupby('h').size().reset_index(name='antall')
 
 # Lag stolpediagram for timeanalyse
 fig_hour = px.bar(hourly_counts, x='h', y='antall', color='h')
-fig_hour.update_layout(xaxis=dict(type="category"),
-                       width=1000)
+fig_hour.update_layout(xaxis=dict(type="category"))
 
 # Vis diagrammet
 fig_hour.show()
@@ -136,8 +132,7 @@ weekday_counts = weekday_counts.sort_values('dw')
 
 # Lag stolpediagram for ukedagsanalyse
 fig_weekday = px.bar(weekday_counts, x='dw', y='antall', color='dw', color_discrete_sequence=px.colors.qualitative.Dark24)
-fig_weekday.update_layout(xaxis=dict(type="category"),
-                          width=1000)
+fig_weekday.update_layout(xaxis=dict(type="category"))
 
 # Vis diagrammet
 fig_weekday.show()
@@ -163,7 +158,7 @@ fig_dwm = dwm_bar_plot(t_g)
 fig_dwm
 
 # %% [markdown]
-# #### Antall feilede etter 14.03.25
+#### Antall feilede etter 14.03.25
 
 # %%
 
@@ -182,8 +177,7 @@ gr = df_f.groupby('d').hendelsetype_navn.value_counts(normalize=False).reset_ind
 fig = px.bar(gr, x="d", y="nc", color="hendelsetype_navn")
 
 fig.update_layout(xaxis=dict(title="Dag feilet"),
-                  yaxis=dict(title="Antall"),
-                  width=1000)
+                  yaxis=dict(title="Antall"))
 
 # %% [markdown]
 #### Antall feilede per type etter 14.03.25
@@ -194,8 +188,7 @@ gr = df_f[df_f.utsendt_forsok_tidspunkt > "2025-03-15"].groupby('d').hendelsetyp
 fig = px.bar(gr, x="d", y="nc", color="hendelsetype_navn")
 
 fig.update_layout(xaxis=dict(title="Dag feilet"),
-                  yaxis=dict(title="Antall"),
-                  width=1000)
+                  yaxis=dict(title="Antall"))
 
 # %% [markdown]
 #### Antall feilede per kanal totalt
@@ -206,8 +199,7 @@ gr = df_f.groupby('d').kanal.value_counts(normalize=False).reset_index(name="nc"
 fig = px.bar(gr, x="d", y="nc", color="kanal")
 
 fig.update_layout(xaxis=dict(title="Dag feilet"),
-                  yaxis=dict(title="Antall"),
-                  width=1000)
+                  yaxis=dict(title="Antall"))
 
 # %% [markdown]
 #### Antall feilede per kanal etter 14.03.25
@@ -219,8 +211,7 @@ gr = df_f[df_f.utsendt_forsok_tidspunkt > "2025-03-15"].groupby('d').kanal.value
 fig = px.bar(gr, x="d", y="nc", color="kanal")
 
 fig.update_layout(xaxis=dict(title="Dag feilet"),
-                  yaxis=dict(title="Antall"),
-                  width=1000)
+                  yaxis=dict(title="Antall"))
 
 # %% [markdown]
 # :::
