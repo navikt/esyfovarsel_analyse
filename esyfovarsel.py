@@ -152,7 +152,7 @@ fig_weekday.show()
 
 # ::: {.panel-tabset}
 
-#### Antall feilede 
+#### Antall feilede totalt
 
 # %%
 
@@ -210,7 +210,7 @@ fig.update_layout(xaxis=dict(title="Dag feilet"),
                   width=1000)
 
 # %% [markdown]
-#### Antall feilede per type etter 14.03.25
+#### Antall feilede per kanal etter 14.03.25
 
 # %%
 
