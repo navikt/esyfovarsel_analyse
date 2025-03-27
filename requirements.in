@@ -1,12 +1,17 @@
-pandas
-pandas_gbq
-plotly
-numpy
+dataverk-airflow
 google-cloud-bigquery
 google-cloud-secret-manager
 ipykernel
-tqdm
+nbclient
 nbformat
+numpy
+oracledb
+pandas
+pandas-gbq
+plotly
+pyYAML 
+tabulate
+tqdm
 
 
 
