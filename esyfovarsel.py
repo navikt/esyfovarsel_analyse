@@ -57,6 +57,7 @@ df_f = get_date_formats(df_f, "utsendt_forsok_tidspunkt")
 
 # %% [markdown]
 
+# :::{.column-page}
 
 ### Utsendte varsler
 
@@ -176,7 +177,8 @@ gr = df_f.groupby('d').hendelsetype_navn.value_counts(normalize=False).reset_ind
 fig = px.bar(gr, x="d", y="nc", color="hendelsetype_navn")
 
 fig.update_layout(xaxis=dict(title="Dag feilet"),
-                  yaxis=dict(title="Antall"))
+                  yaxis=dict(title="Antall"),
+                  width=1000)
 
 # %% [markdown]
 #### Antall feilede per type etter 14.03.25
@@ -187,7 +189,8 @@ gr = df_f[df_f.utsendt_forsok_tidspunkt > "2025-03-15"].groupby('d').hendelsetyp
 fig = px.bar(gr, x="d", y="nc", color="hendelsetype_navn")
 
 fig.update_layout(xaxis=dict(title="Dag feilet"),
-                  yaxis=dict(title="Antall"))
+                  yaxis=dict(title="Antall"),
+                  width=1000)
 
 # %% [markdown]
 #### Antall feilede per kanal totalt
@@ -216,3 +219,5 @@ fig.update_layout(xaxis=dict(title="Dag feilet"),
 # :::
 
 
+# %% [markdown]
+# :::

@@ -374,6 +374,9 @@ nbformat==5.10.4
     # via
     #   -r requirements.in
     #   nbclient
+    #   nbstripout
+nbstripout==0.8.1
+    # via -r requirements.in
 nest-asyncio==1.6.0
     # via ipykernel
 numpy==2.2.4

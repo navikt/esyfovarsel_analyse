@@ -4,6 +4,7 @@ google-cloud-secret-manager
 ipykernel
 nbclient
 nbformat
+nbstripout
 numpy
 oracledb
 pandas
