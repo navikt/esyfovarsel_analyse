@@ -57,7 +57,6 @@ df_f = get_date_formats(df_f, "utsendt_forsok_tidspunkt")
 
 # %% [markdown]
 
-# :::{.column-page}
 
 ### Utsendte varsler
 
@@ -217,5 +216,3 @@ fig.update_layout(xaxis=dict(title="Dag feilet"),
 # :::
 
 
-# %% [markdown]
-# :::
