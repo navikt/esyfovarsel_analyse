@@ -54,7 +54,6 @@ df = get_date_formats(df, "utsendt_tidspunkt")
 df_f = pandas_gbq.read_gbq(d_sql['esyfovarsel_feilet_utsending'], project_id=project)
 df_f = get_date_formats(df_f, "utsendt_forsok_tidspunkt")
 
-
 # %% [markdown]
 
 # :::{.column-page}
@@ -169,10 +168,10 @@ fig_dwm = dwm_bar_plot(t_g)
 fig_dwm
 
 # %% [markdown]
-#### Antall feilede per type totalt
+#### Antall feilede per type totalt, eksl. vellykket resending
 # %%
 
-gr = df_f.groupby('d').hendelsetype_navn.value_counts(normalize=False).reset_index(name="nc")
+gr = df_f[df_f.is_resendt==False].groupby('d').hendelsetype_navn.value_counts(normalize=False).reset_index(name="nc")
 
 fig = px.bar(gr, x="d", y="nc", color="hendelsetype_navn")
 
@@ -181,10 +180,10 @@ fig.update_layout(xaxis=dict(title="Dag feilet"),
                   width=1000)
 
 # %% [markdown]
-#### Antall feilede per type etter 14.03.25
+#### Antall feilede per type etter 14.03.25, eksl. vellykket resending
 # %%
 
-gr = df_f[df_f.utsendt_forsok_tidspunkt > "2025-03-15"].groupby('d').hendelsetype_navn.value_counts(normalize=False).reset_index(name="nc")
+gr = df_f[(df_f.is_resendt==False) & (df_f.utsendt_forsok_tidspunkt > "2025-03-15")].groupby('d').hendelsetype_navn.value_counts(normalize=False).reset_index(name="nc")
 
 fig = px.bar(gr, x="d", y="nc", color="hendelsetype_navn")
 
@@ -193,10 +192,10 @@ fig.update_layout(xaxis=dict(title="Dag feilet"),
                   width=1000)
 
 # %% [markdown]
-#### Antall feilede per kanal totalt
+#### Antall feilede per kanal totalt, eksl. vellykket resending
 # %%
 
-gr = df_f.groupby('d').kanal.value_counts(normalize=False).reset_index(name="nc")
+gr = df_f[(df_f.is_resendt==False)].groupby('d').kanal.value_counts(normalize=False).reset_index(name="nc")
 
 fig = px.bar(gr, x="d", y="nc", color="kanal")
 
@@ -208,12 +207,15 @@ fig.update_layout(xaxis=dict(title="Dag feilet"),
 
 # %%
 
-gr = df_f[df_f.utsendt_forsok_tidspunkt > "2025-03-15"].groupby('d').kanal.value_counts(normalize=False).reset_index(name="nc")
+gr = df_f[(df_f.is_resendt==False) & (df_f.utsendt_forsok_tidspunkt > "2025-03-15")].groupby('d').kanal.value_counts(normalize=False).reset_index(name="nc")
 
 fig = px.bar(gr, x="d", y="nc", color="kanal")
 
 fig.update_layout(xaxis=dict(title="Dag feilet"),
                   yaxis=dict(title="Antall"))
+
+
+
 
 # %% [markdown]
 # :::
