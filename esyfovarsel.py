@@ -54,6 +54,10 @@ df = get_date_formats(df, "utsendt_tidspunkt")
 df_f = pandas_gbq.read_gbq(d_sql['esyfovarsel_feilet_utsending'], project_id=project)
 df_f = get_date_formats(df_f, "utsendt_forsok_tidspunkt")
 
+# alle kalenderavtale
+df_k = pandas_gbq.read_gbq(d_sql['esyfovarsel_kalenderavtale'],project_id=project)
+df_k = get_date_formats(df_k, "opprettet")
+
 # %% [markdown]
 
 # :::{.column-page}
@@ -220,6 +224,63 @@ fig.update_layout(xaxis=dict(title="Dag feilet"),
 # %% [markdown]
 # :::
 
+# %% [markdown]
+
+### Kalenderavtale 
+
+# ::: {.panel-tabset}
+
+#### Antall opprettet avtaler
+
+# %%
+t_g = get_dwmy_df(df_k, date_col='opprettet', week_col='yw', month_col='ym')
+
+fig_dwm = dwm_bar_plot(t_g)
+
+fig_dwm
+
+# %% [markdown]
+#### Kalendertilstand typer
+# %%
+
+
+gr = df_k.groupby('d')['kalenderavtaletilstand'].value_counts(normalize=False).reset_index(name='nc')
+
+fig = px.bar(gr, x="d", y="nc", color="kalenderavtaletilstand")
+
+fig.update_layout(xaxis=dict(title="Kalendertilstand"),
+                  yaxis=dict(title="Antall"),
+                  width=1000)
+# %% [markdown]
+#### Arbeidsgiverens tidsbruk
+# %%
+
+
+df_k['tid_brukt'] = df_k['starttidspunkt'] - df_k['opprettet']
+
+df_k['tid_brukt'] = df_k['tid_brukt'].fillna(pd.Timedelta(0))
+
+df_k_filtered = df_k[~df_k['kalenderavtaletilstand'].isin(['AVHOLDT', 'VENTER_SVAR_FRA_ARBEIDSGIVER'])]
+
+
+
+gr = df_k_filtered.groupby('kalenderavtaletilstand')['tid_brukt'].mean().reset_index(name='total_tid_brukt')
+
+gr['total_tid_brukt_dager'] = gr['total_tid_brukt'].dt.total_seconds() / 86400
+
+
+fig = px.bar(gr, x="kalenderavtaletilstand", y="total_tid_brukt_dager") #color="kalenderavtaletilstand")
+
+fig.update_layout(xaxis=dict(title="Kalendertilstand"),
+                  yaxis=dict(title="Antall"),
+                  width=1000)
+
+
+# Vis plot
+fig.show()
 
 # %% [markdown]
 # :::
+# %% [markdown]
+# :::
+
