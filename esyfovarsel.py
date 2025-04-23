@@ -121,16 +121,21 @@ fig.show()
 
 # %% [markdown]
 
-####  Tidspunktanalyse per Time
+####  Antall varsler per time
 # %%
-
 
 # Gruppere etter time og telle antall forekomster
 hourly_counts = df.groupby('h').size().reset_index(name='antall')
 
+
 # Lag stolpediagram for timeanalyse
 fig_hour = px.bar(hourly_counts, x='h', y='antall', color='h')
-fig_hour.update_layout(xaxis=dict(type="category"))
+#fig_hour.update_layout(xaxis=dict(type="category"))
+fig_hour.update_layout(xaxis=dict(title="Tid"),
+                  yaxis=dict(title="Antall"),
+                  width=1000,
+                  showlegend=False
+                  )
 
 # Vis diagrammet
 fig_hour.show()
@@ -138,7 +143,7 @@ fig_hour.show()
 
 # %% [markdown]
 
-####  Tidspunktanalyse per Ukedag
+####  Antall varsler per ukedag
 # %%
 # Gruppere etter ukedag og telle antall forekomster
 weekday_counts = df.groupby('dw').size().reset_index(name='antall')
@@ -149,7 +154,12 @@ weekday_counts = weekday_counts.sort_values('dw')
 
 # Lag stolpediagram for ukedagsanalyse
 fig_weekday = px.bar(weekday_counts, x='dw', y='antall', color='dw', color_discrete_sequence=px.colors.qualitative.Dark24)
-fig_weekday.update_layout(xaxis=dict(type="category"))
+fig_weekday.update_layout(xaxis=dict(title="Uke"),
+                  yaxis=dict(title="Antall"),
+                  width=1000,
+                  showlegend=False
+                  )
+
 
 # Vis diagrammet
 fig_weekday.show()
