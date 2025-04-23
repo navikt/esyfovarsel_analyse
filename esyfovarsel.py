@@ -86,23 +86,37 @@ type_df = df[df['type'] == 'SM_DIALOGMOTE_SVAR_MOTEBEHOV']
 # Gruppere etter 'år' og telle antall forekomster
 gr2 = type_df.groupby('år').size().reset_index(name='antall')
 
+#fig = px.bar(gr, x="kalenderavtaletilstand", y="total_tid_brukt_dager",color="kalenderavtaletilstand")
+
+
 # Lag stolpediagram
-fig = px.bar(gr2, x='år', y='antall')
-fig.update_layout(xaxis=dict(type="category"))
+fig = px.bar(gr2, x='år', y='antall', color="år",color_discrete_sequence=['red', 'green', 'blue'] )
+fig.update_layout(xaxis=dict(title="år"),
+                  yaxis=dict(title="Antall"),
+                  width=1000,
+                  showlegend=False
+                  )
+#fig.update_layout(xaxis=dict(type="category"))
 
 # %% [markdown]
 
 ####  Antall Frekvensanalyse av Varsler per Type'
 # %% 
-# Gruppere etter 'type' og telle antall forekomster
+
 gr3 = df['type'].value_counts().reset_index()
 gr3.columns = ['type', 'antall']
 
-# Lag stolpediagram
-fig = px.bar(gr3, x='type', y='antall',  color='type', color_discrete_sequence=px.colors.qualitative.Dark24)
-fig.update_layout(xaxis=dict(type="category"))
+fig = px.bar(gr3, x='type', y='antall',   color='type', color_discrete_sequence=px.colors.qualitative.Dark24 )
+for trace in fig.data:
+    trace.name = f"Varsler {trace.name}"  # Legger til "Varsler" foran typen
 
-# Vis diagrammet
+fig.update_layout(xaxis=dict(title="Varsler type", showticklabels = False),
+                  yaxis=dict(title="Antall"),
+                  width=1000,
+                  showlegend=True
+                  )
+
+
 fig.show()
 
 # %% [markdown]
