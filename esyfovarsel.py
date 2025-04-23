@@ -252,7 +252,7 @@ fig.update_layout(xaxis=dict(title="Kalendertilstand"),
                   yaxis=dict(title="Antall"),
                   width=1000)
 # %% [markdown]
-#### Arbeidsgiverens tidsbruk
+#### Arbeidsgiverens tidsbruk(snitt)
 # %%
 
 
@@ -269,10 +269,10 @@ gr = df_k_filtered.groupby('kalenderavtaletilstand')['tid_brukt'].mean().reset_i
 gr['total_tid_brukt_dager'] = gr['total_tid_brukt'].dt.total_seconds() / 86400
 
 
-fig = px.bar(gr, x="kalenderavtaletilstand", y="total_tid_brukt_dager") #color="kalenderavtaletilstand")
+fig = px.bar(gr, x="kalenderavtaletilstand", y="total_tid_brukt_dager",color="kalenderavtaletilstand")
 
 fig.update_layout(xaxis=dict(title="Kalendertilstand"),
-                  yaxis=dict(title="Antall"),
+                  yaxis=dict(title="Antall(snitt)"),
                   width=1000)
 
 
