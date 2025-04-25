@@ -66,37 +66,38 @@ df_k = get_date_formats(df_k, "opprettet")
 
 # ::: {.panel-tabset}
 
-#### Antall utsendte varsler per år
+#### Antall utsendte varsler totalt
 
 #%%
-gr1 = df.groupby("år").type.value_counts().reset_index(name = 'antall')
+t_g = get_dwmy_df(df, date_col='utsendt_tidspunkt', week_col='yw', month_col='ym')
 
-# Lag stolpediagram
-fig = px.bar(gr1, x='år', y='antall', color='type',color_discrete_sequence = px.colors.qualitative.Dark24)
-fig.update_layout(xaxis=dict(type="category"))
+fig_dwm = dwm_bar_plot(t_g)
+
+fig_dwm
+
 
 # %% [markdown]
 
-####  Antall varsle melding for type 'SM_DIALOGMOTE_SVAR_MOTEBEHOV' per år
-# %% 
+####  Antall utsendte varsler per ukedag
+# %%
+# Gruppere etter ukedag og telle antall forekomster
+weekday_counts = df.groupby('dw').size().reset_index(name='antall')
 
-# Filtrere DataFrame for en bestemt type
-type_df = df[df['type'] == 'SM_DIALOGMOTE_SVAR_MOTEBEHOV']
+# Sortere ukedagene i riktig rekkefølge
+weekday_counts['dw'] = pd.Categorical(weekday_counts['dw'], categories=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], ordered=True)
+weekday_counts = weekday_counts.sort_values('dw')
 
-# Gruppere etter 'år' og telle antall forekomster
-gr2 = type_df.groupby('år').size().reset_index(name='antall')
-
-#fig = px.bar(gr, x="kalenderavtaletilstand", y="total_tid_brukt_dager",color="kalenderavtaletilstand")
-
-
-# Lag stolpediagram
-fig = px.bar(gr2, x='år', y='antall', color="år",color_discrete_sequence=['red', 'green', 'blue'] )
-fig.update_layout(xaxis=dict(title="år"),
+# Lag stolpediagram for ukedagsanalyse
+fig_weekday = px.bar(weekday_counts, x='dw', y='antall', color='dw', color_discrete_sequence=px.colors.qualitative.Dark24)
+fig_weekday.update_layout(xaxis=dict(title="Uke"),
                   yaxis=dict(title="Antall"),
                   width=1000,
                   showlegend=False
                   )
-#fig.update_layout(xaxis=dict(type="category"))
+
+
+# Vis diagrammet
+fig_weekday.show()
 
 # %% [markdown]
 
@@ -120,49 +121,64 @@ fig.update_layout(xaxis=dict(title="Varsler type", showticklabels = False),
 fig.show()
 
 # %% [markdown]
+#### Antall utsendte varsler med kanal BRUKERNOTIFIKASJON
 
-####  Antall varsler per time
 # %%
 
-# Gruppere etter time og telle antall forekomster
-hourly_counts = df.groupby('h').size().reset_index(name='antall')
+t_g = get_dwmy_df(df[df.kanal == 'BRUKERNOTIFIKASJON'], date_col='utsendt_tidspunkt', week_col='yw', month_col='ym')
 
+fig_dwm = dwm_bar_plot(t_g)
 
-# Lag stolpediagram for timeanalyse
-fig_hour = px.bar(hourly_counts, x='h', y='antall', color='h')
-#fig_hour.update_layout(xaxis=dict(type="category"))
-fig_hour.update_layout(xaxis=dict(title="Tid"),
-                  yaxis=dict(title="Antall"),
-                  width=1000,
-                  showlegend=False
-                  )
+fig_dwm
 
-# Vis diagrammet
-fig_hour.show()
+# %% [markdown]
+#### Antall utsendte varsler med kanal DITT_SYKEFRAVAER
+
+# %%
+
+t_g = get_dwmy_df(df[df.kanal == "DITT_SYKEFRAVAER"], date_col='utsendt_tidspunkt', week_col='yw', month_col='ym')
+
+fig_dwm = dwm_bar_plot(t_g)
+
+fig_dwm
 
 
 # %% [markdown]
+#### Antall utsendte varsler med kanal DINE_SYKMELDTE 
 
-####  Antall varsler per ukedag
 # %%
-# Gruppere etter ukedag og telle antall forekomster
-weekday_counts = df.groupby('dw').size().reset_index(name='antall')
 
-# Sortere ukedagene i riktig rekkefølge
-weekday_counts['dw'] = pd.Categorical(weekday_counts['dw'], categories=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], ordered=True)
-weekday_counts = weekday_counts.sort_values('dw')
+t_g = get_dwmy_df(df[df.kanal == "DINE_SYKMELDTE"], date_col='utsendt_tidspunkt', week_col='yw', month_col='ym')
 
-# Lag stolpediagram for ukedagsanalyse
-fig_weekday = px.bar(weekday_counts, x='dw', y='antall', color='dw', color_discrete_sequence=px.colors.qualitative.Dark24)
-fig_weekday.update_layout(xaxis=dict(title="Uke"),
-                  yaxis=dict(title="Antall"),
-                  width=1000,
-                  showlegend=False
-                  )
+fig_dwm = dwm_bar_plot(t_g)
+
+fig_dwm
 
 
-# Vis diagrammet
-fig_weekday.show()
+# %% [markdown]
+#### Antall utsendte varsler med kanal ARBEIDSGIVERNOTIFIKASJON
+
+# %%
+
+t_g = get_dwmy_df(df[df.kanal == 'ARBEIDSGIVERNOTIFIKASJON'], date_col='utsendt_tidspunkt', week_col='yw', month_col='ym')
+
+fig_dwm = dwm_bar_plot(t_g)
+
+fig_dwm
+
+
+# %% [markdown]
+#### Antall utsendte varsler med kanal BREV
+
+# %%
+
+t_g = get_dwmy_df(df[df.kanal == "BREV"], date_col='utsendt_tidspunkt', week_col='yw', month_col='ym')
+
+fig_dwm = dwm_bar_plot(t_g)
+
+fig_dwm
+
+
 
 # %% [markdown]
 # :::
@@ -300,8 +316,6 @@ fig.update_layout(xaxis=dict(title="Kalendertilstand"),
                   width=1000)
 
 
-# Vis plot
-fig.show()
 
 # %% [markdown]
 # :::
