@@ -9,7 +9,7 @@ import plotly.express as px
 import plotly.io as pio
 pio.renderers.default = ("plotly_mimetype+" + "notebook_connected+" + "iframe_connected")
 import random
-
+import re
 
 def get_dict(filename):
 
