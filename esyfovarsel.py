@@ -25,8 +25,7 @@ import sys
 import re
 import os
 import random
-import importlib
-importlib.reload(tools)
+
 
 
 from tools import (
