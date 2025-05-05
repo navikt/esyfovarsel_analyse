@@ -9,7 +9,7 @@ import plotly.express as px
 import plotly.io as pio
 pio.renderers.default = ("plotly_mimetype+" + "notebook_connected+" + "iframe_connected")
 import random
-import re
+import re 
 
 def get_dict(filename):
 
@@ -158,10 +158,11 @@ def dwm_bar_plot(t_g):
 # Funksjon for å lage Sankey-diagram fra hendelser
 def lag_sankey_fra_hendelser(df_final):
     # Hent kolonner som inneholder hendelser i rekkefølge
-    hendelse_kolonner = sorted(
-        [col for col in df_final.columns if re.fullmatch(r"hendelse_\d+", col)],
-        key=lambda x: int(x.split('_')[1])
-    )
+
+
+    
+    hendelse_kolonner = sorted([col for col in df_final.columns if col.endswith('_hendelse')],
+                               key=lambda x: int(x.split('_')[0]))
 
     # Lag sekvenser av hendelser per gruppingsid uten direkte gjentakelser
     flyt_lister = []
@@ -294,12 +295,11 @@ def lag_hendelsesflyt_og_beregn_tid(df):
 def finn_vanlige_sekvenser(df_final, top_n=10):
     # Finn hendelsekolonnene som inneholder hendelsesrekkefølgen
     
-    
-    hendelse_kolonner = sorted(
-    [col for col in df_final.columns if re.fullmatch(r"hendelse_\d+", col)],
-    key=lambda x: int(x.split('_')[1])
-)
+    hendelse_kolonner = sorted([col for col in df_final.columns if col.endswith('_hendelse')],
+                               key=lambda x: int(x.split('_')[0]))
 
+    
+   
 
     # Lag sekvenser per 'grupperingsid'
     sekvenser = []
