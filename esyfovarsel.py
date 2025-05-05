@@ -346,25 +346,6 @@ vis_overgang_heatmap(vanligste_sekvenser)
 
 
 # %% [markdown]
-#### Arbeidsgivers brukte tid
-# %%
-
-# Tell antall True og False i 'brukte_dager'
-summed_data = df_final['brukte_dager'].value_counts().reset_index(name='count')
-summed_data['brukte_dager'] =summed_data['brukte_dager'].replace({True: 'brukte dager', False: 'brukte tid'})
-summed_data.columns = ['brukte_dager', 'count']
-
-# Lag bar chart
-fig = px.bar(summed_data, x='brukte_dager', y='count', 
-            color='brukte_dager',  # Bruker True/False for farger
-            labels={'brukte_dager': 'Brukte Dager', 'count': 'Antall'}
-            #title='Antall True vs False for Brukte Dager'
-            )
-
-fig.show()
-
-
-# %% [markdown]
 # :::
 # %% [markdown]
 # :::
