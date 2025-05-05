@@ -24,11 +24,20 @@ import pandas_gbq
 import sys
 import re
 import os
+import random
+import importlib
+importlib.reload(tools)
+
+
 from tools import (
     get_dict, 
     get_date_formats, 
     get_dwmy_df,
-    dwm_bar_plot
+    dwm_bar_plot,
+    lag_hendelsesflyt_og_beregn_tid,
+    lag_sankey_fra_hendelser,
+    finn_vanlige_sekvenser,
+    vis_overgang_heatmap
 )
 
 import plotly.express as px
@@ -316,9 +325,50 @@ fig.update_layout(xaxis=dict(title="Kalendertilstand"),
                   width=1000)
 
 
+# %% [markdown]
+#### Arbeidsgiver hendelser-flyt 
+# %%
+## uten syklus og uten mindre hendelse 
+# Bruk funksjonen til å beregne hendelsesflyt og tid
+df_final = lag_hendelsesflyt_og_beregn_tid(df_k)
+
+# Lag Sankey-diagram fra de beregnede dataene
+lag_sankey_fra_hendelser(df_final)
+
+
+# %% [markdown]
+#### Heatmap for vanligste-sekvenser i hendelse flyt
+# %%
+
+# Finn de vanligste sekvensene mellom hendelser i grupperingsid
+vanligste_sekvenser = finn_vanlige_sekvenser(df_final, top_n=10)
+# Lag heatmap for overganger mellom hendelser med vanligste sekvenser
+vis_overgang_heatmap(vanligste_sekvenser)
+
+
+# %% [markdown]
+#### Arbeidsgivers brukte tid
+# %%
+
+# Tell antall True og False i 'brukte_dager'
+summed_data = df_final['brukte_dager'].value_counts().reset_index(name='count')
+summed_data['brukte_dager'] =summed_data['brukte_dager'].replace({True: 'brukte dager', False: 'brukte tid'})
+summed_data.columns = ['brukte_dager', 'count']
+
+# Lag bar chart
+fig = px.bar(summed_data, x='brukte_dager', y='count', 
+            color='brukte_dager',  # Bruker True/False for farger
+            labels={'brukte_dager': 'Brukte Dager', 'count': 'Antall'}
+            #title='Antall True vs False for Brukte Dager'
+            )
+
+fig.show()
+
 
 # %% [markdown]
 # :::
 # %% [markdown]
 # :::
 
+
+# %%
