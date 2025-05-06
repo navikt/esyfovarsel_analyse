@@ -66,6 +66,17 @@ df_f = get_date_formats(df_f, "utsendt_forsok_tidspunkt")
 df_k = pandas_gbq.read_gbq(d_sql['esyfovarsel_kalenderavtale'],project_id=project)
 df_k = get_date_formats(df_k, "opprettet")
 
+# alle dialogmote isyfo
+df_d = pandas_gbq.read_gbq(d_sql['isyfo_mote_status_endret'],project_id=project)
+df_d = get_date_formats(df_d, "created_at")
+
+# alle mikrofrontend-synlighet
+df_s = pandas_gbq.read_gbq(d_sql['esyfovarsel_mikrofrontend_synlighet'],project_id=project)
+df_s = get_date_formats(df_s, "opprettet")
+
+
+
+
 # %% [markdown]
 
 # :::{.column-page}
@@ -266,7 +277,20 @@ fig = px.bar(gr, x="d", y="nc", color="kanal")
 fig.update_layout(xaxis=dict(title="Dag feilet"),
                   yaxis=dict(title="Antall"))
 
+# %% [markdown]
+#### Datakildesammenligning: INNKALT vs SM_DIALOGMOTE_INNKALT
 
+# %%
+df_innkalt_dialog = df_d[df_d['status'] == 'INNKALT'].groupby('yw')
+df_sm_dialog = df[df['type'] == 'SM_DIALOGMOTE_INNKALT'].groupby('yw')
+
+row_counts = pd.DataFrame({
+    'Kilde': ['Inkalt', 'Dialog'],
+    'Antall rader': [len(df_innkalt_dialog), len(df_sm_dialog)]
+})
+
+fig = px.bar(row_counts, x='Kilde', y='Antall rader', title='Antall rader per kilde')
+fig.show()
 
 
 # %% [markdown]
@@ -343,6 +367,7 @@ lag_sankey_fra_hendelser(df_final)
 vanligste_sekvenser = finn_vanlige_sekvenser(df_final, top_n=10)
 # Lag heatmap for overganger mellom hendelser med vanligste sekvenser
 vis_overgang_heatmap(vanligste_sekvenser)
+
 
 
 # %% [markdown]
