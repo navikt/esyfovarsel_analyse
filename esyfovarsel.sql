@@ -9,3 +9,6 @@ SELECT * FROM EXTERNAL_QUERY("team-esyfo-prod-bbe6.europe-north1.esyfovarsel", "
 
 /*esyfovarsel_mikrofrontend_synlighet*/
 SELECT * FROM EXTERNAL_QUERY("team-esyfo-prod-bbe6.europe-north1.esyfovarsel", "SELECT synlig_for, tjeneste, synlig_tom, opprettet, sist_endret FROM mikrofrontend_synlighet;");
+
+/*isyfo_mote_status_endret*/
+SELECT * FROM EXTERNAL_QUERY("teamsykefravr-prod-7e29.europe-north1.dialogmote", "SELECT cast(id as text), cast(uuid as text),created_at,updated_at,cast(mote_id as text), status, opprettet_av, tilfelle_start, published_at,motedeltaker_behandler  FROM mote_status_endret;");
