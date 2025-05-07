@@ -285,11 +285,11 @@ df_innkalt_dialog = df_d[df_d['status'] == 'INNKALT'].groupby('yw')
 df_sm_dialog = df[df['type'] == 'SM_DIALOGMOTE_INNKALT'].groupby('yw')
 
 row_counts = pd.DataFrame({
-    'Kilde': ['Inkalt', 'Dialog'],
-    'Antall rader': [len(df_innkalt_dialog), len(df_sm_dialog)]
+    'Kilde': ['INNKALT', 'SM_DIALOGMOTE_INNKALT'],
+    'Antall': [len(df_innkalt_dialog), len(df_sm_dialog)]
 })
 
-fig = px.bar(row_counts, x='Kilde', y='Antall rader', title='Antall rader per kilde')
+fig = px.bar(row_counts, x='Kilde', y='Antall')
 fig.show()
 
 
