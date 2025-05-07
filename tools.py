@@ -220,7 +220,7 @@ def lag_sankey_fra_hendelser(df_final):
         ))])
 
     fig.update_layout(
-        title_text="Flyt mellom hendelser (uten direkte syklus i hendelser)",
+        #title_text="Flyt mellom hendelser (uten direkte syklus i hendelser)",
         font=dict(size=14),
         height=800
     )
@@ -288,7 +288,12 @@ def lag_hendelsesflyt_og_beregn_tid(df):
 
     df_final = pd.merge(df_hendelsesflyt, df_total_tid, on='grupperingsid', how='left')
     df_final = pd.merge(df_final, df_sakid, on='grupperingsid', how='left')
+    def get_siste_tilstand(row):
+        hendelser = [row[col] for col in df_final.columns if col.endswith('_hendelse')]
+        siste_tilstand = next((h for h in reversed(hendelser) if pd.notna(h)), None)
+        return siste_tilstand
 
+    df_final['siste_tilstand'] = df_final.apply(get_siste_tilstand, axis=1)
     return df_final
 
 
