@@ -323,33 +323,10 @@ fig = px.bar(gr, x="d", y="nc", color="kalenderavtaletilstand")
 fig.update_layout(xaxis=dict(title="Kalendertilstand"),
                   yaxis=dict(title="Antall"),
                   width=1000)
-# %% [markdown]
-#### Arbeidsgiverens tidsbruk(snitt)
-# %%
-
-
-df_k['tid_brukt'] = df_k['starttidspunkt'] - df_k['opprettet']
-
-df_k['tid_brukt'] = df_k['tid_brukt'].fillna(pd.Timedelta(0))
-
-df_k_filtered = df_k[~df_k['kalenderavtaletilstand'].isin(['AVHOLDT', 'VENTER_SVAR_FRA_ARBEIDSGIVER'])]
-
-
-
-gr = df_k_filtered.groupby('kalenderavtaletilstand')['tid_brukt'].mean().reset_index(name='total_tid_brukt')
-
-gr['total_tid_brukt_dager'] = gr['total_tid_brukt'].dt.total_seconds() / 86400
-
-
-fig = px.bar(gr, x="kalenderavtaletilstand", y="total_tid_brukt_dager",color="kalenderavtaletilstand")
-
-fig.update_layout(xaxis=dict(title="Kalendertilstand"),
-                  yaxis=dict(title="Antall(snitt)"),
-                  width=1000)
 
 
 # %% [markdown]
-#### Arbeidsgiver hendelser-flyt 
+#### Flyt mellom Kalendertilstand (grupperingsid)
 # %%
 ## uten syklus og uten mindre hendelse 
 # Bruk funksjonen til å beregne hendelsesflyt og tid
@@ -358,6 +335,21 @@ df_final = lag_hendelsesflyt_og_beregn_tid(df_k)
 # Lag Sankey-diagram fra de beregnede dataene
 lag_sankey_fra_hendelser(df_final)
 
+# %% [markdown]
+#### Antall per Siste Kalendertilstand basert på grupperingsid
+#%%
+# Telling av siste tilstand
+siste_tilstand_count = df_final['siste_tilstand'].value_counts().reset_index()
+siste_tilstand_count.columns = ['siste_tilstand', 'count']
+
+# Lag en søylediagram for siste hendelsestilstand
+fig = px.bar(siste_tilstand_count, x='siste_tilstand', y='count',
+             #title="Antall per Siste Kalendertilstand basert på kalenderid",
+             labels={'siste_tilstand': 'Kalendertilstand', 'count': 'Antall Kalenderid'},
+             color='siste_tilstand', color_discrete_sequence=px.colors.qualitative.Set2)
+
+# Vis diagrammet
+fig.show()
 
 # %% [markdown]
 #### Heatmap for vanligste-sekvenser i hendelse flyt
@@ -368,7 +360,173 @@ vanligste_sekvenser = finn_vanlige_sekvenser(df_final, top_n=10)
 # Lag heatmap for overganger mellom hendelser med vanligste sekvenser
 vis_overgang_heatmap(vanligste_sekvenser)
 
+# %% [markdown]
+#### Flyt mellom Kalendertilstand (kalenderid)
 
+#%%
+# Funksjon for å beregne hendelsesflyt og tid
+def lag_hendelsesflyt_og_beregn_tid1(df):
+    records = []
+    time_results = []
+    sakid_results = []
+
+    for group_id, group in df.groupby('kalenderid'):
+        group = group.sort_values(by='opprettet')
+        hendelser = group['kalenderavtaletilstand'].tolist()
+        opprettede_tidspunkter = group['opprettet'].tolist()
+
+        if len(hendelser) == 0:
+            continue
+
+        sakid = group['sakid'].iloc[0] if group['sakid'].nunique() == 1 else None
+        record = {
+            'kalenderid': group_id,
+            'sakid': sakid
+        }
+
+        for i, (h, t) in enumerate(zip(hendelser, opprettede_tidspunkter), start=1):
+            record[f'{i}_hendelse'] = h
+            record[f'{i}_tidspunkt'] = t
+
+        records.append(record)
+
+        # Tidsberegning
+        total_time = 0
+        if len(group) == 1:
+            total_time += (group['starttidspunkt'].iloc[0] - group['opprettet'].iloc[0]).total_seconds() / 3600
+        else:
+            total_time += (group['starttidspunkt'].iloc[0] - group['opprettet'].iloc[0]).total_seconds() / 3600
+            for i in range(1, len(group)):
+                total_time += (group['starttidspunkt'].iloc[i] - group['opprettet'].iloc[0]).total_seconds() / 3600
+
+        if total_time >= 24:
+            time_results.append({
+                'kalenderid': group_id,
+                'total_tid_brukt': total_time / 24,
+                'brukte_dager': True 
+            })
+        else:
+            time_results.append({
+                'kalenderid': group_id,
+                'total_tid_brukt': total_time,
+                'brukte_dager': False
+            })
+
+        valid_events_count = sum(pd.notna(group['kalenderavtaletilstand']).astype(int))
+        sakid_results.append({
+            'kalenderid': group_id,
+            'antall_hendelser_med_verdi': valid_events_count
+        })
+
+    df_hendelsesflyt = pd.DataFrame(records)
+    df_total_tid = pd.DataFrame(time_results)
+    df_sakid = pd.DataFrame(sakid_results)
+
+    df_final = pd.merge(df_hendelsesflyt, df_total_tid, on='kalenderid', how='left')
+    df_final = pd.merge(df_final, df_sakid, on='kalenderid', how='left')
+
+
+    def get_siste_tilstand(row):
+        hendelser = [row[col] for col in df_final.columns if col.endswith('_hendelse')]
+        siste_tilstand = next((h for h in reversed(hendelser) if pd.notna(h)), None)
+        return siste_tilstand
+
+    df_final['siste_tilstand'] = df_final.apply(get_siste_tilstand, axis=1)
+
+    return df_final
+
+
+# Funksjon for å lage Sankey-diagram fra hendelser
+def lag_sankey_fra_hendelser1(df_final):
+    # Hent kolonner som inneholder hendelser i rekkefølge
+
+
+    
+    hendelse_kolonner = sorted([col for col in df_final.columns if col.endswith('_hendelse')],
+                               key=lambda x: int(x.split('_')[0]))
+
+    # Lag sekvenser av hendelser per gruppingsid uten direkte gjentakelser
+    flyt_lister = []
+    for _, row in df_final.iterrows():
+        sekvens = [row[col] for col in hendelse_kolonner if pd.notna(row[col])]
+        filtrert_sekvens = []
+
+        for hendelse in sekvens:
+            if len(filtrert_sekvens) == 0 or hendelse != filtrert_sekvens[-1]:
+                filtrert_sekvens.append(hendelse)
+
+        if len(filtrert_sekvens) >= 2:
+            for i in range(len(filtrert_sekvens) - 1):
+                flyt_lister.append((filtrert_sekvens[i], filtrert_sekvens[i+1]))
+
+    # Telle unike overganger
+    overgangsteller = pd.Series(flyt_lister).value_counts().reset_index()
+    overgangsteller.columns = ['source_target', 'count']
+    overgangsteller[['source', 'target']] = pd.DataFrame(overgangsteller['source_target'].tolist(), index=overgangsteller.index)
+    
+    # Filtrer ut flyt med verdi under 5
+    overgangsteller = overgangsteller[overgangsteller['count'] >= 100]
+
+    # Unike noder
+    unike_noder = pd.unique(overgangsteller[['source', 'target']].values.ravel())
+    node_map = {k: i for i, k in enumerate(unike_noder)}
+
+    # Sankey-data
+    sources = overgangsteller['source'].map(node_map)
+    targets = overgangsteller['target'].map(node_map)
+    values = overgangsteller['count']
+
+    # Funksjon for å generere tilfeldige farger
+    def random_color():
+        r = lambda: random.randint(100, 255)
+        return f'rgba({r()},{r()},{r()},0.5)'
+
+    # Lag en farge for hver overgang
+    link_colors = [random_color() for _ in range(len(overgangsteller))]
+    
+    fig = go.Figure(data=[go.Sankey(
+        arrangement="perpendicular",
+        node=dict(
+            pad=20,
+            thickness=30,
+            line=dict(color="black", width=0.8),
+            label=unike_noder.tolist(),
+            color="lightblue"
+        ),
+        link=dict(
+            source=sources,
+            target=targets,
+            value=values,
+            color=link_colors  # Ulike farger for hver link
+        ))])
+
+    fig.update_layout(
+        #title_text="Flyt mellom hendelser med kalenderid (uten direkte syklus i hendelser)",
+        font=dict(size=14),
+        height=800
+    )
+    fig.show()
+
+
+df_final_1 = lag_hendelsesflyt_og_beregn_tid1(df_k)
+
+# Lag Sankey-diagram fra de beregnede dataene
+lag_sankey_fra_hendelser1(df_final_1)
+# %% [markdown]
+#### Antall per Siste Kalendertilstand basert på kalenderid
+#%%
+# Telling av siste tilstand
+siste_tilstand_count = df_final_1['siste_tilstand'].value_counts().reset_index()
+siste_tilstand_count.columns = ['siste_tilstand', 'count']
+
+# Lag en søylediagram for siste hendelsestilstand
+fig = px.bar(siste_tilstand_count, x='siste_tilstand', y='count',
+             #title="Antall per Siste Kalendertilstand basert på kalenderid",
+             labels={'siste_tilstand': 'Kalendertilstand', 'count': 'Antall Kalenderid'},
+             color='siste_tilstand', color_discrete_sequence=px.colors.qualitative.Set2)
+
+# Vis diagrammet
+fig.show()
 
 # %% [markdown]
 # :::
