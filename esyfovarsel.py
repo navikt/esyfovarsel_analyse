@@ -278,19 +278,38 @@ fig.update_layout(xaxis=dict(title="Dag feilet"),
                   yaxis=dict(title="Antall"))
 
 # %% [markdown]
-#### Datakildesammenligning: INNKALT vs SM_DIALOGMOTE_INNKALT
+#### Sammenligning INNKALT 
 
 # %%
 df_innkalt_dialog = df_d[df_d['status'] == 'INNKALT'].groupby('yw')
-df_sm_dialog = df[df['type'] == 'SM_DIALOGMOTE_INNKALT'].groupby('yw')
 
-row_counts = pd.DataFrame({
-    'Kilde': ['INNKALT', 'SM_DIALOGMOTE_INNKALT'],
-    'Antall': [len(df_innkalt_dialog), len(df_sm_dialog)]
-})
+t_g = get_dwmy_df(df_d[df_d['status'] == 'INNKALT'], date_col='created_at', week_col='yw', month_col='ym')
 
-fig = px.bar(row_counts, x='Kilde', y='Antall')
-fig.show()
+fig_dwm = dwm_bar_plot(t_g)
+
+fig_dwm
+
+# %% [markdown]
+#### Sammenligning SM_DIALOGMOTE_INNKALT
+
+# %%
+t_g_e = get_dwmy_df(df[df['type'] == 'SM_DIALOGMOTE_INNKALT'], date_col='utsendt_tidspunkt', week_col='yw', month_col='ym')
+
+fig_dwm = dwm_bar_plot(t_g_e)
+
+fig_dwm
+
+# %% [markdown]
+#### Sammenligning INNKALT etter '2023-03-27'
+
+# %%
+
+t_g_i = get_dwmy_df(df_d[(df_d['status'] == 'INNKALT') & (df_d['created_at'] > '2023-03-27')], date_col='created_at', week_col='yw', month_col='ym')
+
+fig_dwm = dwm_bar_plot(t_g_i)
+
+fig_dwm
+
 
 
 # %% [markdown]
@@ -310,6 +329,8 @@ t_g = get_dwmy_df(df_k, date_col='opprettet', week_col='yw', month_col='ym')
 fig_dwm = dwm_bar_plot(t_g)
 
 fig_dwm
+
+
 
 # %% [markdown]
 #### Kalendertilstand typer
