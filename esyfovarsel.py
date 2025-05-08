@@ -310,18 +310,56 @@ fig_dwm = dwm_bar_plot(t_g_i)
 
 fig_dwm
 
+# %% [markdown]
+####  SM_DIALOGMOTE_INNKALT med kanal DITT_SYKEFRAVAER
+#%%
+t_g_e_k = get_dwmy_df(df[(df['type'] == 'SM_DIALOGMOTE_INNKALT') & (df['kanal'] == 'DITT_SYKEFRAVAER')], date_col='utsendt_tidspunkt', week_col='yw', month_col='ym')
 
+fig_dwm = dwm_bar_plot(t_g_e_k)
+
+fig_dwm
+
+# %% [markdown]
+####  SM_DIALOGMOTE_INNKALT med kanal DITT_SYKEFRAVAER
+#%%
+g_week_e = next(df for df, label in t_g_e_k if label == "Uke")
+g_week_i = next(df for df, label in t_g_i if label == "Uke")
+
+# Så kan du plotte
+fig = dwm_bar_plot_with_diff([(g_week_e, "Uke e_syfo"), (g_week_i, "Uke i_syfo")])
+fig.show()
+
+# %% [markdown]
+#### Sammenligning INNKALT etter '2023-03-27'
+
+# %%
+
+t_g_i_nye = get_dwmy_df(df_d[(df_d['status'] == 'INNKALT') & (df_d['created_at'] > '2023-08-21')], date_col='created_at', week_col='yw', month_col='ym')
+
+fig_dwm = dwm_bar_plot(t_g_i_nye)
+
+fig_dwm
+
+
+
+# %% [markdown]
+####  SM_DIALOGMOTE_INNKALT med kanal DITT_SYKEFRAVAER etter 2023-08-21
+#%%
+g_week_e = next(df for df, label in t_g_e_k if label == "Uke")
+g_week_i_nye = next(df for df, label in t_g_i_nye if label == "Uke")
+
+# Så kan du plotte
+fig = dwm_bar_plot_with_diff([(g_week_e[:-1], "Uke e_syfo"), (g_week_i_nye[:-1], "Uke i_syfo")])
+fig.show()
+
+#%%
 # %% [markdown]
 #### Sammenligning innkalling e-syfo minus i-syfo per uke
 
 # %%
-
-
-
 # Hent ut DataFrame for 'Uke' fra begge
 df_e_uke = next(df for df, label in t_g_e if label == 'Uke')
 df_i_uke = next(df for df, label in t_g_i if label == 'Uke')
-
 
 # Gi entydige kolonnenavn før sammenslåing
 df_e_uke = df_e_uke.rename(columns={'n_count': 'n_count_e_syfo'})
@@ -352,10 +390,6 @@ fig.update_layout(
 
 # Vis plottet
 fig.show()
-
-
-
-
 # %% [markdown]
 # :::
 
