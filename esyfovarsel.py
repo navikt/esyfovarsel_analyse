@@ -311,6 +311,50 @@ fig_dwm = dwm_bar_plot(t_g_i)
 fig_dwm
 
 
+# %% [markdown]
+#### Sammenligning innkalling e-syfo minus i-syfo per uke
+
+# %%
+
+
+
+# Hent ut DataFrame for 'Uke' fra begge
+df_e_uke = next(df for df, label in t_g_e if label == 'Uke')
+df_i_uke = next(df for df, label in t_g_i if label == 'Uke')
+
+
+# Gi entydige kolonnenavn før sammenslåing
+df_e_uke = df_e_uke.rename(columns={'n_count': 'n_count_e_syfo'})
+df_i_uke = df_i_uke.rename(columns={'n_count': 'n_count_i_syfo'})
+
+# Slå sammen på 'Tid'
+df_merged = df_e_uke.merge(df_i_uke, on='Tid')
+df_merged['differanse'] = df_merged['n_count_e_syfo'] - df_merged['n_count_i_syfo']
+
+
+# Lag et barplot med Plotly Express
+fig = px.bar(df_merged, 
+             x='Tid', 
+             y='differanse', 
+             #title="Differanse i i_syfo(INNKALT) og e_syfo(SM_DIALOGMOTE_INNKALT) over Tid",
+             labels={'Tid': 'Tid', 'differanse': 'Differanse'},
+             color='differanse',  # Fargene endres etter differansen
+             color_continuous_scale='Viridis'  # Bruker en gyldig fargepalett
+            )
+
+# Sett x-aksen til å være tekst
+fig.update_layout(
+    xaxis_title='Tid',
+    yaxis_title='Differanse',
+    xaxis_type='category',  # Angi at x-aksen er kategorisk
+    xaxis_tickangle=-45  # Roter x-aksen etiketter
+)
+
+# Vis plottet
+fig.show()
+
+
+
 
 # %% [markdown]
 # :::
