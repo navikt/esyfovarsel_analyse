@@ -322,6 +322,82 @@ fig_dwm
 # %% [markdown]
 ####  SM_DIALOGMOTE_INNKALT med kanal DITT_SYKEFRAVAER
 #%%
+import numpy as np
+def dwm_bar_plot_with_diff(t_g_t):
+    fig = go.Figure()
+
+    # Hent ut ukedata
+    df_e_uke = next(df for df, label in t_g_t if 'e_syfo' in label)
+    df_i_uke = next(df for df, label in t_g_t if 'i_syfo' in label)
+
+    # Gi entydige kolonnenavn
+    df_e_uke = df_e_uke.rename(columns={'n_count': 'n_count_e_syfo'})
+    df_i_uke = df_i_uke.rename(columns={'n_count': 'n_count_i_syfo'})
+
+    # Slå sammen og lag differanse
+    df_diff = df_e_uke.merge(df_i_uke, on='Tid')
+    df_diff['differanse'] = df_diff['n_count_e_syfo'] - df_diff['n_count_i_syfo']
+
+    # Hjelpefunksjon for å sortere ukekoder som '2024-02' riktig
+    def sort_key(uke_str):
+        år, uke = map(int, uke_str.split('-'))
+        return år * 100 + uke
+
+    # Legg til sorteringsnøkkel og sorter
+    for df in [df_e_uke, df_i_uke, df_diff]:
+        df['sort_key'] = df['Tid'].apply(sort_key)
+        df.sort_values('sort_key', inplace=True)
+        df.drop(columns='sort_key', inplace=True)
+
+    # Linje: e_syfo (blå)
+    fig.add_trace(go.Scatter(
+        x=df_e_uke['Tid'],
+        y=df_e_uke['n_count_e_syfo'],
+        name="Uke e_syfo",
+        line=dict(color='blue', width=2),
+        mode='lines+markers',
+        hovertemplate="Uke %{x}<br>e_syfo: %{y}<extra></extra>"
+    ))
+
+    # Linje: i_syfo (grønn)
+    fig.add_trace(go.Scatter(
+        x=df_i_uke['Tid'],
+        y=df_i_uke['n_count_i_syfo'],
+        name="Uke i_syfo",
+        line=dict(color='green', width=2),
+        mode='lines+markers',
+        hovertemplate="Uke %{x}<br>i_syfo: %{y}<extra></extra>"
+    ))
+
+    # Stolpediagram: differanse
+    fig.add_trace(go.Bar(
+        x=df_diff['Tid'],
+        y=df_diff['differanse'],
+        name="Differanse (e - i)",
+        marker=dict(
+            color=np.where(df_diff['differanse'] >= 0, 'orange', 'red')
+        ),
+        opacity=0.6,
+        hovertemplate="Uke %{x}<br>Differanse: %{y}<extra></extra>"
+    ))
+
+    # Layout
+    fig.update_layout(
+        title="Sammenligning: Uke e_syfo vs i_syfo med differanse",
+        xaxis_title="Uke",
+        yaxis_title="Antall",
+        barmode='overlay',
+        legend=dict(orientation="h", yanchor="top", y=1.1, xanchor="left", x=0),
+        template="plotly_white",
+        width=1200,
+        height=600
+    )
+
+    fig.update_xaxes(type="category")
+
+    return fig.update_xaxes(dict(type="category"))
+
+
 g_week_e = next(df for df, label in t_g_e_k if label == "Uke")
 g_week_i = next(df for df, label in t_g_i if label == "Uke")
 
