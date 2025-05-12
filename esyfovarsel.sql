@@ -12,3 +12,6 @@ SELECT * FROM EXTERNAL_QUERY("team-esyfo-prod-bbe6.europe-north1.esyfovarsel", "
 
 /*isyfo_mote_status_endret*/
 SELECT * FROM EXTERNAL_QUERY("teamsykefravr-prod-7e29.europe-north1.dialogmote", "SELECT cast(id as text), cast(uuid as text),created_at,updated_at,cast(mote_id as text), status, opprettet_av, tilfelle_start, published_at,motedeltaker_behandler  FROM mote_status_endret;");
+
+/*isyfo_friskmelding_til_arbeidsformidling*/
+SELECT * FROM EXTERNAL_QUERY("teamsykefravr-prod-7e29.europe-north1.frisktilarbeid", "SELECT created_at FROM vedtak;");

@@ -352,3 +352,23 @@ def vis_overgang_heatmap(vanligste_sekvenser):
 
     # Vis grafen
     fig.show()
+
+
+def list_UTC_columns(df):
+
+    l_utc = list(df.select_dtypes('datetimetz').columns)
+
+    return l_utc 
+
+
+def utc_to_local(df):
+    
+    l_utc = list_UTC_columns(df)
+
+    if l_utc:
+        for col in l_utc:
+            df[col] = df[col].apply(lambda x: x.tz_convert('Europe/Oslo').tz_localize(None))    
+        return df
+
+    else:
+        return df 

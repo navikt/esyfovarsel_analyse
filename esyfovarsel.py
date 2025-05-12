@@ -26,8 +26,6 @@ import re
 import os
 import random
 
-
-
 from tools import (
     get_dict, 
     get_date_formats, 
@@ -36,7 +34,8 @@ from tools import (
     lag_hendelsesflyt_og_beregn_tid,
     lag_sankey_fra_hendelser,
     finn_vanlige_sekvenser,
-    vis_overgang_heatmap
+    vis_overgang_heatmap,
+    utc_to_local
 )
 
 import plotly.express as px
@@ -57,7 +56,6 @@ df = pandas_gbq.read_gbq(d_sql['esyfovarsel_alt'], project_id=project)
 df['år'] = df.utsendt_tidspunkt.astype('datetime64[ns]').dt.strftime('%Y')
 df = get_date_formats(df, "utsendt_tidspunkt")
 
-
 # alle feilede varsler
 df_f = pandas_gbq.read_gbq(d_sql['esyfovarsel_feilet_utsending'], project_id=project)
 df_f = get_date_formats(df_f, "utsendt_forsok_tidspunkt")
@@ -70,11 +68,14 @@ df_k = get_date_formats(df_k, "opprettet")
 df_d = pandas_gbq.read_gbq(d_sql['isyfo_mote_status_endret'],project_id=project)
 df_d = get_date_formats(df_d, "created_at")
 
+# alle friskmelding til arbeidsformidling isyfo
+df_fta = pandas_gbq.read_gbq(d_sql['isyfo_friskmelding_til_arbeidsformidling'],project_id=project)
+df_fta = utc_to_local(df_fta)
+df_fta = get_date_formats(df_fta, "created_at")
+
 # alle mikrofrontend-synlighet
 df_s = pandas_gbq.read_gbq(d_sql['esyfovarsel_mikrofrontend_synlighet'],project_id=project)
 df_s = get_date_formats(df_s, "opprettet")
-
-
 
 
 # %% [markdown]
