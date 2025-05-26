@@ -38,6 +38,7 @@ from tools import (
     utc_to_local
 )
 
+import datetime as dt
 import plotly.express as px
 from plotly import graph_objects as go
 import plotly.io as pio
@@ -76,19 +77,35 @@ df_fta = get_date_formats(df_fta, "created_at")
 # alle mikrofrontend-synlighet
 df_s = pandas_gbq.read_gbq(d_sql['esyfovarsel_mikrofrontend_synlighet'],project_id=project)
 df_s = get_date_formats(df_s, "opprettet")
+#%%
+print(f'Sist oppdatert: {dt.datetime.now().strftime("%Y-%m-%d %H:%M")}')
 
 
 # %% [markdown]
 
 # :::{.column-page}
 
+#
+# esyfovarsel analysen består av
+# - Videresendendte varsler
+#   - for forskjellige typer av tema (topic)
+#   - til relevant kanaler: 
+#       - DineSykmeldte
+#       - Brukernotifikasjoner 
+#       - Arbeidsgivernotifikasjoner
+# - Kalenderavtale 
+#   - for arbeidsgivere for å vise frem en kommende avtale (typisk dialogmøte) 
+
 ### Utsendte varsler
 
 # ::: {.panel-tabset}
+#
+# Denne seksjonen viser antall utsendte varsler over tid, fordelt på ulike kanaler. Den illustrerer også hvor hyppig ulike typer varsler forekommer (frekvens),
 
-#### Antall utsendte varsler totalt
 
-#%%
+#### Antall utsendte varsler
+
+##%%
 t_g = get_dwmy_df(df, date_col='utsendt_tidspunkt', week_col='yw', month_col='ym')
 
 fig_dwm = dwm_bar_plot(t_g)
@@ -121,7 +138,7 @@ fig_weekday.show()
 
 # %% [markdown]
 
-####  Antall Frekvensanalyse av Varsler per Type'
+####  Antall Frekvensanalyse av Varsler per Type
 # %% 
 
 gr3 = df['type'].value_counts().reset_index()
@@ -384,7 +401,7 @@ def dwm_bar_plot_with_diff(t_g_t):
 
     # Layout
     fig.update_layout(
-        title="Sammenligning: Uke e_syfo vs i_syfo med differanse",
+        #title="#Sammenligning: Uke e_syfo vs i_syfo med differanse",
         xaxis_title="Uke",
         yaxis_title="Antall",
         barmode='overlay',
