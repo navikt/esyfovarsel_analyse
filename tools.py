@@ -154,9 +154,99 @@ def dwm_bar_plot(t_g):
 
 
 
+def list_UTC_columns(df):
 
-# Funksjon for å lage Sankey-diagram fra hendelser
-def lag_sankey_fra_hendelser(df_final):
+    l_utc = list(df.select_dtypes('datetimetz').columns)
+
+    return l_utc 
+
+
+def utc_to_local(df):
+    
+    l_utc = list_UTC_columns(df)
+
+    if l_utc:
+        for col in l_utc:
+            df[col] = df[col].apply(lambda x: x.tz_convert('Europe/Oslo').tz_localize(None))    
+        return df
+
+    else:
+        return df 
+
+
+# Funksjon for å beregne hendelsesflyt og tid
+def lag_hendelsesflyt_og_beregn_tid1(df):
+    records = []
+    time_results = []
+    sakid_results = []
+
+    for group_id, group in df.groupby('kalenderid'):
+        group = group.sort_values(by='opprettet')
+        hendelser = group['kalenderavtaletilstand'].tolist()
+        opprettede_tidspunkter = group['opprettet'].tolist()
+
+        if len(hendelser) == 0:
+            continue
+
+        sakid = group['sakid'].iloc[0] if group['sakid'].nunique() == 1 else None
+        record = {
+            'kalenderid': group_id,
+            'sakid': sakid
+        }
+
+        for i, (h, t) in enumerate(zip(hendelser, opprettede_tidspunkter), start=1):
+            record[f'{i}_hendelse'] = h
+            record[f'{i}_tidspunkt'] = t
+
+        records.append(record)
+
+        # Tidsberegning
+        total_time = 0
+        if len(group) == 1:
+            total_time += (group['starttidspunkt'].iloc[0] - group['opprettet'].iloc[0]).total_seconds() / 3600
+        else:
+            total_time += (group['starttidspunkt'].iloc[0] - group['opprettet'].iloc[0]).total_seconds() / 3600
+            for i in range(1, len(group)):
+                total_time += (group['starttidspunkt'].iloc[i] - group['opprettet'].iloc[0]).total_seconds() / 3600
+
+        if total_time >= 24:
+            time_results.append({
+                'kalenderid': group_id,
+                'total_tid_brukt': total_time / 24,
+                'brukte_dager': True 
+            })
+        else:
+            time_results.append({
+                'kalenderid': group_id,
+                'total_tid_brukt': total_time,
+                'brukte_dager': False
+            })
+
+        valid_events_count = sum(pd.notna(group['kalenderavtaletilstand']).astype(int))
+        sakid_results.append({
+            'kalenderid': group_id,
+            'antall_hendelser_med_verdi': valid_events_count
+        })
+
+    df_hendelsesflyt = pd.DataFrame(records)
+    df_total_tid = pd.DataFrame(time_results)
+    df_sakid = pd.DataFrame(sakid_results)
+
+    df_final = pd.merge(df_hendelsesflyt, df_total_tid, on='kalenderid', how='left')
+    df_final = pd.merge(df_final, df_sakid, on='kalenderid', how='left')
+
+
+    def get_siste_tilstand(row):
+        hendelser = [row[col] for col in df_final.columns if col.endswith('_hendelse')]
+        siste_tilstand = next((h for h in reversed(hendelser) if pd.notna(h)), None)
+        return siste_tilstand
+
+    df_final['siste_tilstand'] = df_final.apply(get_siste_tilstand, axis=1)
+
+    return df_final
+
+#Funksjon for å lage Sankey-diagram fra hendelser
+def lag_sankey_fra_hendelser1(df_final):
     # Hent kolonner som inneholder hendelser i rekkefølge
 
 
@@ -220,155 +310,96 @@ def lag_sankey_fra_hendelser(df_final):
         ))])
 
     fig.update_layout(
-        #title_text="Flyt mellom hendelser (uten direkte syklus i hendelser)",
+        #title_text="Flyt mellom hendelser med kalenderid (uten direkte syklus i hendelser)",
         font=dict(size=14),
         height=800
     )
     fig.show()
 
 
+def dwm_bar_plot_with_prikk_og_diff(t_g_t):
+    fig = go.Figure()
 
-# Funksjon for å beregne hendelsesflyt og tid
-def lag_hendelsesflyt_og_beregn_tid(df):
-    records = []
-    time_results = []
-    sakid_results = []
+    # Hent og klargjør data
+    df_e = next(df for df, label in t_g_t if 'e_syfo' in label).rename(columns={'n_count': 'e_syfo'})
+    df_i = next(df for df, label in t_g_t if 'i_syfo' in label).rename(columns={'n_count': 'i_syfo'})
 
-    for group_id, group in df.groupby('grupperingsid'):
-        group = group.sort_values(by='opprettet')
-        hendelser = group['kalenderavtaletilstand'].tolist()
-        opprettede_tidspunkter = group['opprettet'].tolist()
+    df = df_e.merge(df_i, on='Tid')
 
-        if len(hendelser) == 0:
-            continue
+    # Sorter ukene riktig
+    def sort_key(uke_str):
+        år, uke = map(int, uke_str.split('-'))
+        return år * 100 + uke
 
-        sakid = group['sakid'].iloc[0] if group['sakid'].nunique() == 1 else None
-        record = {
-            'grupperingsid': group_id,
-            'sakid': sakid
-        }
+    df['sort_key'] = df['Tid'].apply(sort_key)
+    df = df.sort_values('sort_key')
 
-        for i, (h, t) in enumerate(zip(hendelser, opprettede_tidspunkter), start=1):
-            record[f'{i}_hendelse'] = h
-            record[f'{i}_tidspunkt'] = t
+    # Differanse
+    df['diff'] = df['e_syfo'] - df['i_syfo']
 
-        records.append(record)
+    # Søyler
+    fig.add_trace(go.Bar(
+        x=df['Tid'],
+        y=df['e_syfo'],
+        name="e_syfo",
+        marker_color='blue',
+        hovertemplate="Uke %{x}<br>e_syfo: %{y}<extra></extra>"
+    ))
 
-        # Tidsberegning
-        total_time = 0
-        if len(group) == 1:
-            total_time += (group['starttidspunkt'].iloc[0] - group['opprettet'].iloc[0]).total_seconds() / 3600
-        else:
-            total_time += (group['starttidspunkt'].iloc[0] - group['opprettet'].iloc[0]).total_seconds() / 3600
-            for i in range(1, len(group)):
-                total_time += (group['starttidspunkt'].iloc[i] - group['opprettet'].iloc[0]).total_seconds() / 3600
+    fig.add_trace(go.Bar(
+        x=df['Tid'],
+        y=df['i_syfo'],
+        name="i_syfo",
+        marker_color='green',
+        hovertemplate="Uke %{x}<br>i_syfo: %{y}<extra></extra>"
+    ))
 
-        if total_time >= 24:
-            time_results.append({
-                'grupperingsid': group_id,
-                'total_tid_brukt': total_time / 24,
-                'brukte_dager': True 
-            })
-        else:
-            time_results.append({
-                'grupperingsid': group_id,
-                'total_tid_brukt': total_time,
-                'brukte_dager': False
-            })
+    # Prikker (flagg) med forklaring
+    legend_added = {'e_syfo': False, 'i_syfo': False}
 
-        valid_events_count = sum(pd.notna(group['kalenderavtaletilstand']).astype(int))
-        sakid_results.append({
-            'grupperingsid': group_id,
-            'antall_hendelser_med_verdi': valid_events_count
-        })
+    for idx, row in df.iterrows():
+        uke = row['Tid']
+        e_val = row['e_syfo']
+        i_val = row['i_syfo']
+        diff = e_val - i_val
 
-    df_hendelsesflyt = pd.DataFrame(records)
-    df_total_tid = pd.DataFrame(time_results)
-    df_sakid = pd.DataFrame(sakid_results)
+        if diff < 0:
+            # e_syfo lavere → rød prikk
+            fig.add_trace(go.Scatter(
+                x=[uke],
+                y=[e_val + 5],
+                mode='markers',
+                marker=dict(color='red', size=10, symbol='circle'),
+                name="e_syfo lavere enn i_syfo" if not legend_added['e_syfo'] else None,
+                showlegend=not legend_added['e_syfo'],
+                hovertemplate=f"Uke {uke}<br>e_syfo lavere med {abs(diff)}<extra></extra>"
+            ))
+            legend_added['e_syfo'] = True
 
-    df_final = pd.merge(df_hendelsesflyt, df_total_tid, on='grupperingsid', how='left')
-    df_final = pd.merge(df_final, df_sakid, on='grupperingsid', how='left')
-    def get_siste_tilstand(row):
-        hendelser = [row[col] for col in df_final.columns if col.endswith('_hendelse')]
-        siste_tilstand = next((h for h in reversed(hendelser) if pd.notna(h)), None)
-        return siste_tilstand
+        elif diff > 0:
+            # i_syfo lavere → gul prikk
+            fig.add_trace(go.Scatter(
+                x=[uke],
+                y=[i_val + 5],
+                mode='markers',
+                marker=dict(color='gold', size=10, symbol='circle'),
+                name="i_syfo lavere enn e_syfo" if not legend_added['i_syfo'] else None,
+                showlegend=not legend_added['i_syfo'],
+                hovertemplate=f"Uke {uke}<br>i_syfo lavere med {abs(diff)}<extra></extra>"
+            ))
+            legend_added['i_syfo'] = True
 
-    df_final['siste_tilstand'] = df_final.apply(get_siste_tilstand, axis=1)
-    return df_final
-
-
-def finn_vanlige_sekvenser(df_final, top_n=10):
-    # Finn hendelsekolonnene som inneholder hendelsesrekkefølgen
-    
-    hendelse_kolonner = sorted([col for col in df_final.columns if col.endswith('_hendelse')],
-                               key=lambda x: int(x.split('_')[0]))
-
-    
-   
-
-    # Lag sekvenser per 'grupperingsid'
-    sekvenser = []
-    for _, row in df_final.iterrows():
-        sekvens = [row[col] for col in hendelse_kolonner if pd.notna(row[col])]
-        if len(sekvens) >= 2:  # Vi trenger minst to hendelser for å ha en sekvens
-            for i in range(len(sekvens)-1):
-                sekvenser.append((sekvens[i], sekvens[i+1]))
-
-    # Tell antall forekomster av hver sekvens
-    sekvens_df = pd.DataFrame(sekvenser, columns=['fra', 'til'])
-    sekvens_teller = sekvens_df.value_counts().reset_index(name='count')
-
-    # Velg de vanligste sekvensene
-    vanligste_sekvenser = sekvens_teller.head(top_n)
-
-    return vanligste_sekvenser
-
-
-
-
-
-
-def vis_overgang_heatmap(vanligste_sekvenser):
-    # Lag overgangsmatrise
-    overgang_mat = vanligste_sekvenser.pivot_table(index='fra', columns='til', values='count', aggfunc='sum').fillna(0)
-
-    # Finn minimum og maksimum verdier for antall overganger
-    min_value = overgang_mat.min().min()  # Minimum verdi i hele heatmapet
-    max_value = overgang_mat.max().max()  # Maksimum verdi i hele heatmapet
-
-    # Lag heatmap
-    fig = px.imshow(overgang_mat, 
-                    labels=dict(x="Til Hendelse", y="Fra Hendelse", color="Antall Overganger"),
-                    color_continuous_scale="Blues", 
-                    title="Heatmap av Overganger Mellom Hendelser",
-                    range_color=[min_value, max_value])  # Sett fargeskalaens område
-
-    # Juster layout for å lage et mer balansert heatmap
+    # Layout
     fig.update_layout(
-        height=800,  # Høyde og bredde lik for en mer kvadratisk form
-        width=800,   # Hvis du vil ha nøyaktig samme størrelse for høyde og bredde
-        xaxis=dict(side="top")
+        xaxis_title="Uke",
+        yaxis_title="Antall varsler",
+        barmode='group',
+        template="plotly_white",
+        legend=dict(orientation="h", yanchor="top", y=1.15, xanchor="left", x=0),
+        width=1200,
+        height=600
     )
 
-    # Vis grafen
-    fig.show()
+    fig.update_xaxes(type="category")
 
-
-def list_UTC_columns(df):
-
-    l_utc = list(df.select_dtypes('datetimetz').columns)
-
-    return l_utc 
-
-
-def utc_to_local(df):
-    
-    l_utc = list_UTC_columns(df)
-
-    if l_utc:
-        for col in l_utc:
-            df[col] = df[col].apply(lambda x: x.tz_convert('Europe/Oslo').tz_localize(None))    
-        return df
-
-    else:
-        return df 
+    return fig
