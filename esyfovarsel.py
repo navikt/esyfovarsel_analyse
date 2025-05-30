@@ -31,11 +31,10 @@ from tools import (
     get_date_formats, 
     get_dwmy_df,
     dwm_bar_plot,
-    lag_hendelsesflyt_og_beregn_tid,
-    lag_sankey_fra_hendelser,
-    finn_vanlige_sekvenser,
-    vis_overgang_heatmap,
-    utc_to_local
+    lag_sankey_fra_hendelser1,
+    lag_hendelsesflyt_og_beregn_tid1,
+    utc_to_local,
+    dwm_bar_plot_with_prikk_og_diff
 )
 
 import datetime as dt
@@ -88,11 +87,7 @@ print(f'Sist oppdatert: {dt.datetime.now().strftime("%Y-%m-%d %H:%M")}')
 #
 # esyfovarsel analysen består av
 #
-# - Videresendendte varsler
-#
-#   - for forskjellige typer av tema (topic)
-#
-#   - til relevant kanaler: 
+# - videresendte varsler for forskjellige typer tema (topic) til relevante kanaler: 
 #
 #       - DineSykmeldte
 #
@@ -100,16 +95,14 @@ print(f'Sist oppdatert: {dt.datetime.now().strftime("%Y-%m-%d %H:%M")}')
 #
 #       - Arbeidsgivernotifikasjoner
 #
-# - Kalenderavtale 
-#
-#   - for arbeidsgivere for å vise frem en kommende avtale (typisk dialogmøte) 
+# - Kalenderavtale for arbeidsgivere som viser kommende avtale (typisk dialogmøte). 
 
 ### Utsendte varsler
-
+# %% [markdown]
 # ::: {.panel-tabset}
 #
-#  Denne seksjonen viser antall utsendte varsler over tid, fordelt på ulike kanaler.  
-#  Den illustrerer også hvor hyppig ulike typer varsler forekommer (frekvens).
+#  Denne seksjonen viser antallet utsendte varsler over tid, fordelt på ulike kanaler.  
+#  Den viser også hvor ofte ulike typer varsler forekommer (frekvens).
 
 #### Antall utsendte varsler
 
@@ -303,195 +296,24 @@ fig = px.bar(gr, x="d", y="nc", color="kanal")
 fig.update_layout(xaxis=dict(title="Dag feilet"),
                   yaxis=dict(title="Antall"))
 
-# %% [markdown]
-#### Sammenligning INNKALT 
-
-# %%
-df_innkalt_dialog = df_d[df_d['status'] == 'INNKALT'].groupby('yw')
-
-t_g = get_dwmy_df(df_d[df_d['status'] == 'INNKALT'], date_col='created_at', week_col='yw', month_col='ym')
-
-fig_dwm = dwm_bar_plot(t_g)
-
-fig_dwm
 
 # %% [markdown]
-#### Sammenligning SM_DIALOGMOTE_INNKALT
+####  Antal varsler og differanse mellom INNKALT og SM_DIALOGMOTE_INNKALT etter 2023-08-21 
 
-# %%
-t_g_e = get_dwmy_df(df[df['type'] == 'SM_DIALOGMOTE_INNKALT'], date_col='utsendt_tidspunkt', week_col='yw', month_col='ym')
-
-fig_dwm = dwm_bar_plot(t_g_e)
-
-fig_dwm
-
-# %% [markdown]
-#### Sammenligning INNKALT etter '2023-03-27'
-
-# %%
-
-t_g_i = get_dwmy_df(df_d[(df_d['status'] == 'INNKALT') & (df_d['created_at'] > '2023-03-27')], date_col='created_at', week_col='yw', month_col='ym')
-
-fig_dwm = dwm_bar_plot(t_g_i)
-
-fig_dwm
-
-# %% [markdown]
-####  SM_DIALOGMOTE_INNKALT med kanal DITT_SYKEFRAVAER
 #%%
-t_g_e_k = get_dwmy_df(df[(df['type'] == 'SM_DIALOGMOTE_INNKALT') & (df['kanal'] == 'DITT_SYKEFRAVAER')], date_col='utsendt_tidspunkt', week_col='yw', month_col='ym')
-
-fig_dwm = dwm_bar_plot(t_g_e_k)
-
-fig_dwm
-
-# %% [markdown]
-####  SM_DIALOGMOTE_INNKALT med kanal DITT_SYKEFRAVAER
-#%%
-import numpy as np
-def dwm_bar_plot_with_diff(t_g_t):
-    fig = go.Figure()
-
-    # Hent ut ukedata
-    df_e_uke = next(df for df, label in t_g_t if 'e_syfo' in label)
-    df_i_uke = next(df for df, label in t_g_t if 'i_syfo' in label)
-
-    # Gi entydige kolonnenavn
-    df_e_uke = df_e_uke.rename(columns={'n_count': 'n_count_e_syfo'})
-    df_i_uke = df_i_uke.rename(columns={'n_count': 'n_count_i_syfo'})
-
-    # Slå sammen og lag differanse
-    df_diff = df_e_uke.merge(df_i_uke, on='Tid')
-    df_diff['differanse'] = df_diff['n_count_e_syfo'] - df_diff['n_count_i_syfo']
-
-    # Hjelpefunksjon for å sortere ukekoder som '2024-02' riktig
-    def sort_key(uke_str):
-        år, uke = map(int, uke_str.split('-'))
-        return år * 100 + uke
-
-    # Legg til sorteringsnøkkel og sorter
-    for df in [df_e_uke, df_i_uke, df_diff]:
-        df['sort_key'] = df['Tid'].apply(sort_key)
-        df.sort_values('sort_key', inplace=True)
-        df.drop(columns='sort_key', inplace=True)
-
-    # Linje: e_syfo (blå)
-    fig.add_trace(go.Scatter(
-        x=df_e_uke['Tid'],
-        y=df_e_uke['n_count_e_syfo'],
-        name="Uke e_syfo",
-        line=dict(color='blue', width=2),
-        mode='lines+markers',
-        hovertemplate="Uke %{x}<br>e_syfo: %{y}<extra></extra>"
-    ))
-
-    # Linje: i_syfo (grønn)
-    fig.add_trace(go.Scatter(
-        x=df_i_uke['Tid'],
-        y=df_i_uke['n_count_i_syfo'],
-        name="Uke i_syfo",
-        line=dict(color='green', width=2),
-        mode='lines+markers',
-        hovertemplate="Uke %{x}<br>i_syfo: %{y}<extra></extra>"
-    ))
-
-    # Stolpediagram: differanse
-    fig.add_trace(go.Bar(
-        x=df_diff['Tid'],
-        y=df_diff['differanse'],
-        name="Differanse (e - i)",
-        marker=dict(
-            color=np.where(df_diff['differanse'] >= 0, 'orange', 'red')
-        ),
-        opacity=0.6,
-        hovertemplate="Uke %{x}<br>Differanse: %{y}<extra></extra>"
-    ))
-
-    # Layout
-    fig.update_layout(
-        #title="#Sammenligning: Uke e_syfo vs i_syfo med differanse",
-        xaxis_title="Uke",
-        yaxis_title="Antall",
-        barmode='overlay',
-        legend=dict(orientation="h", yanchor="top", y=1.1, xanchor="left", x=0),
-        template="plotly_white",
-        width=1200,
-        height=600
-    )
-
-    fig.update_xaxes(type="category")
-
-    return fig.update_xaxes(dict(type="category"))
-
-
-g_week_e = next(df for df, label in t_g_e_k if label == "Uke")
-g_week_i = next(df for df, label in t_g_i if label == "Uke")
-
-# Så kan du plotte
-fig = dwm_bar_plot_with_diff([(g_week_e, "Uke e_syfo"), (g_week_i, "Uke i_syfo")])
-fig.show()
-
-# %% [markdown]
-#### Sammenligning INNKALT etter '2023-03-27'
-
-# %%
 
 t_g_i_nye = get_dwmy_df(df_d[(df_d['status'] == 'INNKALT') & (df_d['created_at'] > '2023-08-21')], date_col='created_at', week_col='yw', month_col='ym')
+t_g_e_k = get_dwmy_df(df[(df['type'] == 'SM_DIALOGMOTE_INNKALT') & (df['kanal'] == 'DITT_SYKEFRAVAER')], date_col='utsendt_tidspunkt', week_col='yw', month_col='ym')
 
-fig_dwm = dwm_bar_plot(t_g_i_nye)
-
-fig_dwm
-
-
-
-# %% [markdown]
-####  SM_DIALOGMOTE_INNKALT med kanal DITT_SYKEFRAVAER etter 2023-08-21
-#%%
 g_week_e = next(df for df, label in t_g_e_k if label == "Uke")
 g_week_i_nye = next(df for df, label in t_g_i_nye if label == "Uke")
 
-# Så kan du plotte
-fig = dwm_bar_plot_with_diff([(g_week_e[:-1], "Uke e_syfo"), (g_week_i_nye[:-1], "Uke i_syfo")])
+fig = dwm_bar_plot_with_prikk_og_diff([
+    (g_week_e[:-1], "e_syfo"),
+    (g_week_i_nye[:-1], "i_syfo")
+])
 fig.show()
 
-#%%
-# %% [markdown]
-#### Sammenligning innkalling e-syfo minus i-syfo per uke
-
-# %%
-# Hent ut DataFrame for 'Uke' fra begge
-df_e_uke = next(df for df, label in t_g_e if label == 'Uke')
-df_i_uke = next(df for df, label in t_g_i if label == 'Uke')
-
-# Gi entydige kolonnenavn før sammenslåing
-df_e_uke = df_e_uke.rename(columns={'n_count': 'n_count_e_syfo'})
-df_i_uke = df_i_uke.rename(columns={'n_count': 'n_count_i_syfo'})
-
-# Slå sammen på 'Tid'
-df_merged = df_e_uke.merge(df_i_uke, on='Tid')
-df_merged['differanse'] = df_merged['n_count_e_syfo'] - df_merged['n_count_i_syfo']
-
-
-# Lag et barplot med Plotly Express
-fig = px.bar(df_merged, 
-             x='Tid', 
-             y='differanse', 
-             #title="Differanse i i_syfo(INNKALT) og e_syfo(SM_DIALOGMOTE_INNKALT) over Tid",
-             labels={'Tid': 'Tid', 'differanse': 'Differanse'},
-             color='differanse',  # Fargene endres etter differansen
-             color_continuous_scale='Viridis'  # Bruker en gyldig fargepalett
-            )
-
-# Sett x-aksen til å være tekst
-fig.update_layout(
-    xaxis_title='Tid',
-    yaxis_title='Differanse',
-    xaxis_type='category',  # Angi at x-aksen er kategorisk
-    xaxis_tickangle=-45  # Roter x-aksen etiketter
-)
-
-# Vis plottet
-fig.show()
 # %% [markdown]
 # :::
 
@@ -526,203 +348,23 @@ fig.update_layout(xaxis=dict(title="Kalendertilstand"),
                   width=1000)
 
 
-# %% [markdown]
-#### Flyt mellom Kalendertilstand (grupperingsid)
-# %%
-## uten syklus og uten mindre hendelse 
-# Bruk funksjonen til å beregne hendelsesflyt og tid
-df_final = lag_hendelsesflyt_og_beregn_tid(df_k)
-
-# Lag Sankey-diagram fra de beregnede dataene
-lag_sankey_fra_hendelser(df_final)
-
-# %% [markdown]
-#### Antall per Siste Kalendertilstand basert på grupperingsid
-#%%
-# Telling av siste tilstand
-siste_tilstand_count = df_final['siste_tilstand'].value_counts().reset_index()
-siste_tilstand_count.columns = ['siste_tilstand', 'count']
-
-# Lag en søylediagram for siste hendelsestilstand
-fig = px.bar(siste_tilstand_count, x='siste_tilstand', y='count',
-             #title="Antall per Siste Kalendertilstand basert på kalenderid",
-             labels={'siste_tilstand': 'Kalendertilstand', 'count': 'Antall Kalenderid'},
-             color='siste_tilstand', color_discrete_sequence=px.colors.qualitative.Set2)
-
-# Vis diagrammet
-fig.show()
-
-# %% [markdown]
-#### Heatmap for vanligste-sekvenser i hendelse flyt
-# %%
-
-# Finn de vanligste sekvensene mellom hendelser i grupperingsid
-vanligste_sekvenser = finn_vanlige_sekvenser(df_final, top_n=10)
-# Lag heatmap for overganger mellom hendelser med vanligste sekvenser
-vis_overgang_heatmap(vanligste_sekvenser)
 
 # %% [markdown]
 #### Flyt mellom Kalendertilstand (kalenderid)
 
 #%%
-# Funksjon for å beregne hendelsesflyt og tid
-def lag_hendelsesflyt_og_beregn_tid1(df):
-    records = []
-    time_results = []
-    sakid_results = []
-
-    for group_id, group in df.groupby('kalenderid'):
-        group = group.sort_values(by='opprettet')
-        hendelser = group['kalenderavtaletilstand'].tolist()
-        opprettede_tidspunkter = group['opprettet'].tolist()
-
-        if len(hendelser) == 0:
-            continue
-
-        sakid = group['sakid'].iloc[0] if group['sakid'].nunique() == 1 else None
-        record = {
-            'kalenderid': group_id,
-            'sakid': sakid
-        }
-
-        for i, (h, t) in enumerate(zip(hendelser, opprettede_tidspunkter), start=1):
-            record[f'{i}_hendelse'] = h
-            record[f'{i}_tidspunkt'] = t
-
-        records.append(record)
-
-        # Tidsberegning
-        total_time = 0
-        if len(group) == 1:
-            total_time += (group['starttidspunkt'].iloc[0] - group['opprettet'].iloc[0]).total_seconds() / 3600
-        else:
-            total_time += (group['starttidspunkt'].iloc[0] - group['opprettet'].iloc[0]).total_seconds() / 3600
-            for i in range(1, len(group)):
-                total_time += (group['starttidspunkt'].iloc[i] - group['opprettet'].iloc[0]).total_seconds() / 3600
-
-        if total_time >= 24:
-            time_results.append({
-                'kalenderid': group_id,
-                'total_tid_brukt': total_time / 24,
-                'brukte_dager': True 
-            })
-        else:
-            time_results.append({
-                'kalenderid': group_id,
-                'total_tid_brukt': total_time,
-                'brukte_dager': False
-            })
-
-        valid_events_count = sum(pd.notna(group['kalenderavtaletilstand']).astype(int))
-        sakid_results.append({
-            'kalenderid': group_id,
-            'antall_hendelser_med_verdi': valid_events_count
-        })
-
-    df_hendelsesflyt = pd.DataFrame(records)
-    df_total_tid = pd.DataFrame(time_results)
-    df_sakid = pd.DataFrame(sakid_results)
-
-    df_final = pd.merge(df_hendelsesflyt, df_total_tid, on='kalenderid', how='left')
-    df_final = pd.merge(df_final, df_sakid, on='kalenderid', how='left')
-
-
-    def get_siste_tilstand(row):
-        hendelser = [row[col] for col in df_final.columns if col.endswith('_hendelse')]
-        siste_tilstand = next((h for h in reversed(hendelser) if pd.notna(h)), None)
-        return siste_tilstand
-
-    df_final['siste_tilstand'] = df_final.apply(get_siste_tilstand, axis=1)
-
-    return df_final
-
-
-# Funksjon for å lage Sankey-diagram fra hendelser
-def lag_sankey_fra_hendelser1(df_final):
-    # Hent kolonner som inneholder hendelser i rekkefølge
-
-
-    
-    hendelse_kolonner = sorted([col for col in df_final.columns if col.endswith('_hendelse')],
-                               key=lambda x: int(x.split('_')[0]))
-
-    # Lag sekvenser av hendelser per gruppingsid uten direkte gjentakelser
-    flyt_lister = []
-    for _, row in df_final.iterrows():
-        sekvens = [row[col] for col in hendelse_kolonner if pd.notna(row[col])]
-        filtrert_sekvens = []
-
-        for hendelse in sekvens:
-            if len(filtrert_sekvens) == 0 or hendelse != filtrert_sekvens[-1]:
-                filtrert_sekvens.append(hendelse)
-
-        if len(filtrert_sekvens) >= 2:
-            for i in range(len(filtrert_sekvens) - 1):
-                flyt_lister.append((filtrert_sekvens[i], filtrert_sekvens[i+1]))
-
-    # Telle unike overganger
-    overgangsteller = pd.Series(flyt_lister).value_counts().reset_index()
-    overgangsteller.columns = ['source_target', 'count']
-    overgangsteller[['source', 'target']] = pd.DataFrame(overgangsteller['source_target'].tolist(), index=overgangsteller.index)
-    
-    # Filtrer ut flyt med verdi under 5
-    overgangsteller = overgangsteller[overgangsteller['count'] >= 100]
-
-    # Unike noder
-    unike_noder = pd.unique(overgangsteller[['source', 'target']].values.ravel())
-    node_map = {k: i for i, k in enumerate(unike_noder)}
-
-    # Sankey-data
-    sources = overgangsteller['source'].map(node_map)
-    targets = overgangsteller['target'].map(node_map)
-    values = overgangsteller['count']
-
-    # Funksjon for å generere tilfeldige farger
-    def random_color():
-        r = lambda: random.randint(100, 255)
-        return f'rgba({r()},{r()},{r()},0.5)'
-
-    # Lag en farge for hver overgang
-    link_colors = [random_color() for _ in range(len(overgangsteller))]
-    
-    fig = go.Figure(data=[go.Sankey(
-        arrangement="perpendicular",
-        node=dict(
-            pad=20,
-            thickness=30,
-            line=dict(color="black", width=0.8),
-            label=unike_noder.tolist(),
-            color="lightblue"
-        ),
-        link=dict(
-            source=sources,
-            target=targets,
-            value=values,
-            color=link_colors  # Ulike farger for hver link
-        ))])
-
-    fig.update_layout(
-        #title_text="Flyt mellom hendelser med kalenderid (uten direkte syklus i hendelser)",
-        font=dict(size=14),
-        height=800
-    )
-    fig.show()
-
-
 df_final_1 = lag_hendelsesflyt_og_beregn_tid1(df_k)
-
-# Lag Sankey-diagram fra de beregnede dataene
 lag_sankey_fra_hendelser1(df_final_1)
+
 # %% [markdown]
 #### Antall per Siste Kalendertilstand basert på kalenderid
 #%%
-# Telling av siste tilstand
+
 siste_tilstand_count = df_final_1['siste_tilstand'].value_counts().reset_index()
 siste_tilstand_count.columns = ['siste_tilstand', 'count']
 
-# Lag en søylediagram for siste hendelsestilstand
+
 fig = px.bar(siste_tilstand_count, x='siste_tilstand', y='count',
-             #title="Antall per Siste Kalendertilstand basert på kalenderid",
              labels={'siste_tilstand': 'Kalendertilstand', 'count': 'Antall Kalenderid'},
              color='siste_tilstand', color_discrete_sequence=px.colors.qualitative.Set2)
 
@@ -734,5 +376,3 @@ fig.show()
 # %% [markdown]
 # :::
 
-
-# %%
