@@ -87,25 +87,33 @@ print(f'Sist oppdatert: {dt.datetime.now().strftime("%Y-%m-%d %H:%M")}')
 
 #
 # esyfovarsel analysen består av
+#
 # - Videresendendte varsler
+#
 #   - for forskjellige typer av tema (topic)
+#
 #   - til relevant kanaler: 
+#
 #       - DineSykmeldte
+#
 #       - Brukernotifikasjoner 
+#
 #       - Arbeidsgivernotifikasjoner
+#
 # - Kalenderavtale 
+#
 #   - for arbeidsgivere for å vise frem en kommende avtale (typisk dialogmøte) 
 
 ### Utsendte varsler
 
 # ::: {.panel-tabset}
 #
-# Denne seksjonen viser antall utsendte varsler over tid, fordelt på ulike kanaler. Den illustrerer også hvor hyppig ulike typer varsler forekommer (frekvens),
-
+#  Denne seksjonen viser antall utsendte varsler over tid, fordelt på ulike kanaler.  
+#  Den illustrerer også hvor hyppig ulike typer varsler forekommer (frekvens).
 
 #### Antall utsendte varsler
 
-##%%
+# %%
 t_g = get_dwmy_df(df, date_col='utsendt_tidspunkt', week_col='yw', month_col='ym')
 
 fig_dwm = dwm_bar_plot(t_g)
