@@ -54,8 +54,9 @@ df_l_s =pandas_gbq.read_gbq(d_sql['kobletnarmestelederaktivt'], project_id=proje
 # %% [markdown]
 
 # :::{.column-page}
-
-### datasett-analyse
+#
+# Datasettet som brukes i analysen, er en kobling av aktive sykmeldte i SYFO og nærmeste-leder-relasjon i SYFO.
+### Datasett-analyse
 # %% [markdown]
 
 # ::: {.panel-tabset}
@@ -93,16 +94,14 @@ fig.update_layout(xaxis=dict(title='Status', showticklabels = False),
                   showlegend=True
                   )
 
-
 fig.show()
 
 
 # %% [markdown]
 
-####  antall personer med og uten leder
+####  Antall personer med og uten leder
 # %%
 
-# stor verdi 
 df_uten = df_l_s[df_l_s['narmeste_leder_personident'].isna()]
 antall_uten_leder = df_uten['fnr'].nunique()
 
@@ -121,7 +120,7 @@ fig = px.bar(
     y="Antall personer",
     color="Lederstatus",
     text="Antall personer",
-    title="Antall personer med og uten nærmeste leder",
+    #title="Antall personer med og uten nærmeste leder",
     color_discrete_map={
         "Har leder": "seagreen",
         "Ingen leder": "crimson"
@@ -131,14 +130,34 @@ fig = px.bar(
 fig.update_layout(
     xaxis_title="Lederstatus",
     yaxis_title="Antall personer",
-    showlegend=False
+    showlegend=False,
+    margin=dict(b=100)  # Gir plass nederst til annotasjonen
 )
 
+# Legg til footnote
+fig.add_annotation(
+    text="Denne viser lederstatus for sykmeldte i Syfo. Med leder mener vi de som har en leder registrert i narmeste_leder_relajson, og uten leder er de som ikke har noen data i narmeste_leder_relajson",
+    xref="paper", yref="paper",
+    x=0, y=-0.3,
+    showarrow=False,
+    font=dict(size=12, color="grey"),
+    align="left"
+)
 fig.show()
+#  %% [markdown]
+# :::
+
 
 # %% [markdown]
 
-#### Fordeling av aktive ledere per person (Status "NY_LEDER")
+### Aktiv ledere ANALYSE MED Status "NY_LEDER"
+
+# ::: {.panel-tabset}
+
+#
+# Denne seksjon viser person-leder analyse med status "NY_LEDER". Den vises hvem som har en eller fler aktiv leder og hvem som har avslutted leder relasjon og har ingen nye relasjon.
+
+####  Antall personer med en eller flere ledere
 # %%
 
 df = df_l_s.sort_values(by=["fnr", "narmeste_leder_personident", "aktiv_fom"]).copy()
@@ -179,11 +198,27 @@ data2 = pd.DataFrame({
 })
 
 fig2 = px.bar(data2, x="Leder-type", y="Antall", text="Antall", color="Leder-type", color_discrete_sequence=px.colors.qualitative.Set1)
+fig2.update_layout(
+    margin=dict(b=200)  # Mer plass under grafen
+)
+fig2.add_annotation(
+    text = (
+    "Denne figuren viser aktiv lederstatus for sykmeldte i Syfo.<br>"
+    "Med 1 aktiv leder mener vi de som har én aktiv leder registrert i narmeste_leder_relajson.<br>"
+    "Med flere aktive ledere mener vi de som har mer enn én leder registrert som aktiv i narmeste_leder_relajson."
+),
+    xref="paper", yref="paper",
+    x=0, y=-0.5,
+    showarrow=False,
+    font=dict(size=12, color="grey"),
+    align="left"
+)
+
 fig2.show()
 
 # %% [markdown]
 
-#### Fordelling leder
+#### Antall personer med / uten aktiv leder
 
 # %%
 
@@ -197,18 +232,88 @@ data1 = pd.DataFrame({
     "Antall": [personer_med_aktiv_leder, personer_uten_aktiv_leder]
 })
 
-fig1 = px.bar(data1, x="Status", y="Antall", title="Antall personer med / uten aktiv leder",
+fig1 = px.bar(data1, x="Status", y="Antall", #title="Antall personer med / uten aktiv leder",
               text="Antall", color="Status", color_discrete_sequence=px.colors.qualitative.Set2)
-fig1.show()
-# Beregn antall ledere per person
-flere_ledere = aktive_df.groupby("fnr")["narmeste_leder_personident"].nunique()
-antall_med_1 = (flere_ledere == 1).sum()
-antall_med_flere = (flere_ledere > 1).sum()
 
+fig1.show()
 
 # %% [markdown]
 
-#### Beregn antall ledere per person med status "NY_LEDER" og "None"
+#### Fordeling av ledere per person inkludert kun avsluttede relasjoner
+
+
+# %%
+
+#title="Fordeling av ledere inkludert kun avsluttede relasjoner",
+# Alle personer som har minst én relasjon med aktiv_tom satt (altså avsluttet)
+personer_med_avsluttede1 = df_l_s[df_l_s["aktiv_tom"].notna()]["fnr"].unique()
+
+# Alle personer med aktive relasjoner (funnet fra hent_aktive_ledere)
+aktive_fnr = set(aktive_df["fnr"])
+
+# De som kun har avsluttede relasjoner, altså ikke aktive nå
+kun_avsluttede_fnr1 = set(personer_med_avsluttede1) - aktive_fnr
+
+# Tell hvor mange slike personer det er
+antall_kun_avsluttede1 = len(kun_avsluttede_fnr1)
+
+
+data_extended1 = pd.DataFrame({
+    "Fordeling": [
+        "Med aktiv leder",
+        "Tidligere leder - kun avsluttet relasjon",
+        "Uten leder"
+    ],
+    "Antall": [
+        personer_med_aktiv_leder,
+        antall_kun_avsluttede1,
+        antall_uten_leder
+    ]
+})
+
+fig = px.bar(
+    data_extended1, x="Fordeling", y="Antall",
+    
+    text="Antall", color="Fordeling",
+    color_discrete_sequence=px.colors.qualitative.Set2
+)
+fig.update_layout(
+    margin=dict(b=200)  # Mer plass under grafen
+)
+fig.add_annotation(
+    text=(
+        "Denne viser lederstatus for sykmeldte i Syfo.<br>"
+        "Med aktiv leder mener vi de som har én eller flere aktive ledere registrert i narmeste_leder_relajson.<br>"
+        "Tidligere leder — kun avsluttet relasjon — er de som har hatt leder, men ikke har noen aktive nå.<br>"
+        "Uten leder er de som ikke har noen data i narmeste_leder_relajson."
+    ),
+    xref="paper", yref="paper",
+    x=0, y=-0.5,
+    showarrow=False,
+    font=dict(size=12, color="grey"),
+    align="left"
+)
+
+
+fig.show()
+
+
+# %% [markdown]
+# :::
+
+# %% [markdown]
+
+### Aktiv ledere ANALYSE MED Status "NY_LEDER" og "None"
+
+# ::: {.panel-tabset}
+
+#
+# Denne seksjon viser person-leder analyse med status "NY_LEDER" og "None". Her vi ser på er det noen som har leder men har status "None". Den vises også hvem som har en eller flere aktiv leder og hvem som har avslutted leder relasjon og har ingen nye relasjon.
+#
+
+# %% [markdown]
+
+#### Antall personer med en eller flere ledere
 
 # %%
 def hent_aktive_ledere(df_l_s):
@@ -265,12 +370,29 @@ data2 = pd.DataFrame({
 
 fig2 = px.bar(data2, x="Leder-type", y="Antall", 
               text="Antall", color="Leder-type", color_discrete_sequence=px.colors.qualitative.Set1)
+
+fig2.update_layout(
+    margin=dict(b=200)  # Mer plass under grafen
+)
+fig2.add_annotation(
+    text = (
+    "Denne figuren viser aktiv lederstatus for sykmeldte i Syfo.<br>"
+    "Med 1 aktiv leder mener vi de som har én aktiv leder registrert i narmeste_leder_relajson.<br>"
+    "Med flere aktive ledere mener vi de som har mer enn én leder registrert som aktiv i narmeste_leder_relajson."
+),
+    xref="paper", yref="paper",
+    x=0, y=-0.5,
+    showarrow=False,
+    font=dict(size=12, color="grey"),
+    align="left"
+)
+
 fig2.show()
 
 
 # %% [markdown]
 
-#### Fordeling av aktive ledere per person (Status: "NY_LEDER" og "None")
+#### Antall personer med / uten aktiv leder
 
 # %%
 
@@ -284,11 +406,71 @@ data1 = pd.DataFrame({
     "Antall": [personer_med_aktiv_leder_none, personer_uten_aktiv_leder_none]
 })
 
-fig1 = px.bar(data1, x="Status", y="Antall", title="Antall personer med / uten aktiv leder",
+fig1 = px.bar(data1, x="Status", y="Antall", #title="Antall personer med / uten aktiv leder",
               text="Antall", color="Status", color_discrete_sequence=px.colors.qualitative.Set2)
 fig1.show()
 
+
 # %% [markdown]
+
+#### Fordeling av ledere per person inkludert kun avsluttede relasjoner
+# %%
+
+# Alle personer som har minst én relasjon med aktiv_tom satt (altså avsluttet)
+personer_med_avsluttede = df_l_s[df_l_s["aktiv_tom"].notna()]["fnr"].unique()
+
+# Alle personer med aktive relasjoner (funnet fra hent_aktive_ledere)
+aktive_fnr = set(aktive_df_none["fnr"])
+
+# De som kun har avsluttede relasjoner, altså ikke aktive nå
+kun_avsluttede_fnr = set(personer_med_avsluttede) - aktive_fnr
+
+# Tell hvor mange slike personer det er
+antall_kun_avsluttede = len(kun_avsluttede_fnr)
+
+data_extended = pd.DataFrame({
+    "Fordeling": [
+        "Med aktiv leder",
+        "Tidligere leder - kun avsluttet relasjon",
+        "Uten leder"
+    ],
+    "Antall": [
+        personer_med_aktiv_leder_none,
+        antall_kun_avsluttede,
+        antall_uten_leder
+    ]
+})
+
+fig = px.bar(
+    data_extended, x="Fordeling", y="Antall",
+    
+    text="Antall", color="Fordeling",
+    color_discrete_sequence=px.colors.qualitative.Set2
+)
+fig.update_layout(
+    margin=dict(b=200)  # Mer plass under grafen
+)
+fig.add_annotation(
+    text=(
+        "Denne viser lederstatus for sykmeldte i Syfo.<br>"
+        "Med aktiv leder mener vi de som har én eller flere aktive ledere registrert i narmeste_leder_relajson.<br>"
+        "Tidligere leder — kun avsluttet relasjon — er de som har hatt leder, men ikke har noen aktive nå.<br>"
+        "Uten leder er de som ikke har noen data i narmeste_leder_relajson."
+    ),
+    xref="paper", yref="paper",
+    x=0, y=-0.5,
+    showarrow=False,
+    font=dict(size=12, color="grey"),
+    align="left"
+)
+
+fig.show()
+
+
+
+
+
+#  %% [markdown]
 # :::
 
 
