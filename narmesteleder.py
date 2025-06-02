@@ -56,6 +56,7 @@ df_l_s =pandas_gbq.read_gbq(d_sql['kobletnarmestelederaktivt'], project_id=proje
 # :::{.column-page}
 #
 # Datasettet som brukes i analysen, er en kobling av aktive sykmeldte i SYFO og nærmeste-leder-relasjon i SYFO.
+#
 ### Datasett-analyse
 # %% [markdown]
 
@@ -136,7 +137,7 @@ fig.update_layout(
 
 # Legg til footnote
 fig.add_annotation(
-    text="Denne viser lederstatus for sykmeldte i Syfo. Med leder mener vi de som har en leder registrert i narmeste_leder_relajson, og uten leder er de som ikke har noen data i narmeste_leder_relajson",
+    text=("Denne viser lederstatus for sykmeldte i Syfo. Med leder mener vi de som har en leder registrert i narmeste_leder_relajson, og uten leder er de som ikke har noen data i narmeste_leder_relajson"),
     xref="paper", yref="paper",
     x=0, y=-0.3,
     showarrow=False,
@@ -150,7 +151,7 @@ fig.show()
 
 # %% [markdown]
 
-### Aktiv ledere ANALYSE MED Status "NY_LEDER"
+### Aktiv ledere med Status "NY_LEDER"
 
 # ::: {.panel-tabset}
 
@@ -303,7 +304,7 @@ fig.show()
 
 # %% [markdown]
 
-### Aktiv ledere ANALYSE MED Status "NY_LEDER" og "None"
+### Aktiv ledere med Status "NY_LEDER" og "None"
 
 # ::: {.panel-tabset}
 
