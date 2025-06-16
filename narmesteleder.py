@@ -467,8 +467,80 @@ fig.add_annotation(
 
 fig.show()
 
+# %% [markdown]
+
+#### Antall ledere fordelt på antall virksomheter
+# %%
+leder_per_virksomhet_r2 =aktive_df_none.groupby('narmeste_leder_personident')['virksomhetsnummer'].nunique().reset_index()
+
+vc = leder_per_virksomhet_r2['virksomhetsnummer'].value_counts().reset_index()
+vc.columns = ['antall_virksomheter', 'antall_ledere']
+
+# sortere etter antall virksomheter for bedre x-akse
+vc = vc.sort_values('antall_virksomheter')
+
+fig = px.bar(vc,
+             x='antall_virksomheter',
+             y='antall_ledere',
+             text='antall_ledere',
+             labels={'antall_virksomheter': 'Antall virksomheter per leder',
+                     'antall_ledere': 'Antall ledere'},
+             title='')
+
+fig.update_traces(textposition='outside')
+fig.update_layout(xaxis=dict(dtick=1))  # alle x-ticks
+
+fig.show()
+
+# %% [markdown]
+
+#### Antall ledere fordelt på antall virksomheter
+#%%
+leder_per_virksomhet_r1 =aktive_df_none.groupby('virksomhetsnummer')['narmeste_leder_personident'].nunique().reset_index()
+leder_per_virksomhet_r1.columns = ['virksomhetsnummer', 'antall_ledere']
+grense = 6
+
+def etikett_ny(x):
+    if x <= grense:
+        return str(x)
+    else:
+        return f"over {grense}"
+
+# Bruk funksjonen for å lage etikett-kolonne med ny gruppering
+leder_per_virksomhet_r1['leder_etikett'] = leder_per_virksomhet_r1['antall_ledere'].apply(etikett_ny)
+
+# Tell antall virksomheter per etikett
+fordeling1 = leder_per_virksomhet_r1.groupby('leder_etikett').size().reset_index(name='Antall virksomheter')
+
+# Lag sorteringsrekkefølge (sørg for at 'over 6' kommer sist)
+sorteringsrekkefølge1 = {str(i): i for i in range(1, grense+1)}
+sorteringsrekkefølge1[f"over {grense}"] = grense + 1
+
+fordeling1['sort_key'] = fordeling1['leder_etikett'].map(sorteringsrekkefølge1)
+
+# Sorter etter nøkkel og fjern kolonne
+fordeling1 = fordeling1.sort_values('sort_key').drop(columns='sort_key')
 
 
+
+
+fig = px.bar(
+    fordeling1,
+    x='leder_etikett',
+    y='Antall virksomheter',
+    text='Antall virksomheter',
+    color='leder_etikett',
+    color_discrete_sequence=px.colors.qualitative.Set1
+)
+
+fig.update_layout(
+    title="Antall virksomheter etter antall aktive ledere (gruppert)",
+    xaxis_title="Antall aktive ledere",
+    yaxis_title="Antall virksomheter",
+    margin=dict(b=120)
+)
+
+fig.show()
 
 
 #  %% [markdown]
