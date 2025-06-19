@@ -674,7 +674,7 @@ unicodecsv==0.14.1
     # via apache-airflow
 universal-pathlib==0.2.6
     # via apache-airflow
-urllib3==2.3.0
+urllib3==2.5.0
     # via
     #   kubernetes
     #   kubernetes-asyncio
