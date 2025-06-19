@@ -568,7 +568,7 @@ fordeling1['sort_key'] = fordeling1['etikett'].map(sorteringsrekkefølge1)
 
 fordeling1 = fordeling1.sort_values('sort_key').drop(columns='sort_key')
 
-print(fordeling1['etikett'].unique())
+
 
 
 fig = px.bar(
