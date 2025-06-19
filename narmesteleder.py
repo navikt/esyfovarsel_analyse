@@ -469,7 +469,7 @@ fig.show()
 
 # %% [markdown]
 
-#### Antall ledere fordelt på antall virksomheter
+#### Fordeling av ledere etter antall virksomheter de leder
 # %%
 leder_per_virksomhet_r2 =aktive_df_none.groupby('narmeste_leder_personident')['virksomhetsnummer'].nunique().reset_index()
 
@@ -494,7 +494,7 @@ fig.show()
 
 # %% [markdown]
 
-#### Antall ledere fordelt på antall virksomheter
+#### Fordeling av virksomheter etter antall aktive ledere (gruppert)
 #%%
 leder_per_virksomhet_r1 =aktive_df_none.groupby('virksomhetsnummer')['narmeste_leder_personident'].nunique().reset_index()
 leder_per_virksomhet_r1.columns = ['virksomhetsnummer', 'antall_ledere']
@@ -528,20 +528,64 @@ fig = px.bar(
     fordeling1,
     x='leder_etikett',
     y='Antall virksomheter',
-    text='Antall virksomheter',
-    color='leder_etikett',
-    color_discrete_sequence=px.colors.qualitative.Set1
+    text='Antall virksomheter'
 )
 
 fig.update_layout(
-    title="Antall virksomheter etter antall aktive ledere (gruppert)",
-    xaxis_title="Antall aktive ledere",
+    #title="Antall virksomheter etter antall aktive ledere (gruppert)",
+    xaxis_title=" Antall ledere per virksomhet(gruppert)",
     yaxis_title="Antall virksomheter",
     margin=dict(b=120)
 )
 
 fig.show()
 
+# %% [markdown]
+
+#### Antall ansatte per leder
+#%%
+
+gr1 = aktive_df_none.groupby(['narmeste_leder_personident'])['fnr'].nunique().reset_index(name='antall_ansatte')
+
+grense = 8
+
+def etikett_ny(x):
+    if x <= grense:
+        return str(x)
+    else:
+        return f"over {grense}"
+
+
+gr1['etikett'] = gr1['antall_ansatte'].apply(etikett_ny)
+
+fordeling1 = gr1.groupby('etikett').size().reset_index(name='Antall_ansatte')
+
+sorteringsrekkefølge1 = {str(i): i for i in range(1, grense+1)}
+sorteringsrekkefølge1[f"over {grense}"] = grense + 1
+
+fordeling1['sort_key'] = fordeling1['etikett'].map(sorteringsrekkefølge1)
+
+
+fordeling1 = fordeling1.sort_values('sort_key').drop(columns='sort_key')
+
+print(fordeling1['etikett'].unique())
+
+
+fig = px.bar(
+    fordeling1,
+    x='etikett',
+    y='Antall_ansatte',
+    text='Antall_ansatte'
+)
+
+fig.update_layout(
+    #title="Antall ansatte per leder(gruppert))",
+    xaxis_title="Antall ansatte",
+    yaxis_title="Antall ledere",
+    margin=dict(b=120)
+)
+
+fig.show()
 
 #  %% [markdown]
 # :::
