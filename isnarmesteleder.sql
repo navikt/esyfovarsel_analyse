@@ -4,3 +4,8 @@ SELECT oversikt.id AS oversikt_id,oversikt.uuid AS oversikt_uuid,oversikt.fnr ,l
 
 
 
+
+/*narmesteleder_restricted*/
+SELECT * FROM EXTERNAL_QUERY("teamsykefravr-prod-7e29.europe-north1.narmesteleder", "SELECT created_at, updated_at, virksomhetsnummer, arbeidstaker_personident, narmeste_leder_personident, aktiv_fom, aktiv_tom, status FROM narmeste_leder_relasjon where created_at >= '2025-01-01';");
+
+
