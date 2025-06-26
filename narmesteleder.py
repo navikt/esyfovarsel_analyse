@@ -32,6 +32,7 @@ from tools import (
     get_date_formats, 
     get_dwmy_df,
     dwm_bar_plot,
+    utc_to_local
 )
 
 import plotly.express as px
@@ -48,17 +49,67 @@ d_sql = get_dict("isnarmesteleder.sql")
 #| echo: false
 #| output: false
 
+df_nl_r =pandas_gbq.read_gbq(d_sql['narmesteleder_restricted'], project_id=project)
 
 df_l_s =pandas_gbq.read_gbq(d_sql['kobletnarmestelederaktivt'], project_id=project)
-
 # %% [markdown]
 
 # :::{.column-page}
 #
-# Datasettet som brukes i analysen, er en kobling av aktive sykmeldte i SYFO og nærmeste-leder-relasjon i SYFO.
-#
-### Datasett-analyse
+### nærmeste-leder-relasjoner analyse
+# Datasettet som brukes her, gjelder narmeste-leder-relasjoner og er begrenset til år 2025.
 # %% [markdown]
+
+# ::: {.panel-tabset}
+
+#### Antall data per uke i 2025
+
+#%%
+df = utc_to_local(df_nl_r)
+df = get_date_formats(df, "created_at")
+df['yw_str'] = df['yw'].astype(str)
+df['uke_value'] = df['yw_str'].str.split('-').str[1].astype(int)
+df['uke_label'] = 'Uke ' + df['uke_value'].astype(str)
+
+counts = df.groupby(['uke_label', 'status']).size().reset_index(name='antall')
+counts['uke_sort'] = counts['uke_label'].str.extract(r'(\d+)').astype(int)
+counts = counts.sort_values('uke_sort')
+
+fig = px.bar(
+    counts,
+    x='uke_label',
+    y='antall',
+    color='status',
+    barmode='stack',
+    category_orders={'uke_label': counts['uke_label'].unique()},
+    labels={'uke_label': 'Uke', 'antall': 'Antall', 'status': 'Status'}
+)
+fig.update_layout(
+    xaxis_title='Uke',
+    yaxis_title='Antall',
+    legend_title_text='Status',
+    xaxis_tickangle=-45,
+    bargap=0.3
+)
+fig.show()
+
+# %% [markdown]
+
+# %% [markdown]
+
+####  Antall personer med og uten leder
+
+# %%
+
+
+#  %% [markdown]
+# :::
+
+# %% [markdown]
+
+### Datasett-analyse
+## Datasettet som brukes i analysen, er en kobling av aktive sykmeldte i SYFO og nærmeste-leder-relasjon i SYFO.
+#
 
 # ::: {.panel-tabset}
 
@@ -66,6 +117,7 @@ df_l_s =pandas_gbq.read_gbq(d_sql['kobletnarmestelederaktivt'], project_id=proje
 
 #%%
 df = get_date_formats(df_l_s, "aktiv_fom")
+
 date_col='d'
 df[date_col] = pd.to_datetime(df[date_col], errors='coerce')
 t_g = get_dwmy_df(df, date_col='d')
