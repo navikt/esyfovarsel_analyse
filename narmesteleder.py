@@ -269,6 +269,7 @@ fig2.show()
 #### Fordeling av ledere per person inkludert kun avsluttede relasjoner
 # %%
 
+personer_med_aktiv_leder_none = aktive_df_none["fnr"].nunique()
 # Alle personer som har minst én relasjon med aktiv_tom satt (altså avsluttet)
 personer_med_avsluttede = df_l_s[df_l_s["aktiv_tom"].notna()]["fnr"].unique()
 
