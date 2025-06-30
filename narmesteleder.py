@@ -110,8 +110,13 @@ fig.show()
 
 #%%
 
-df = utc_to_local(df_l_s)
-df = get_date_formats(df, "leder_created_at")
+df_med = df_l_s[df_l_s['narmeste_leder_personident'].notna()]
+df_med = utc_to_local(df_med)
+
+idx = df_med.groupby(["arbeidstaker_personident", "narmeste_leder_personident"])["leder_created_at"].idxmax()
+
+siste_df = df_med.loc[idx].reset_index(drop=True)
+df = get_date_formats(siste_df, "leder_created_at")
 df['d_str'] = df['d'].astype(str)
 df['aar_value'] = df['d_str'].str.split('-').str[0]
 
@@ -135,8 +140,20 @@ fig.update_layout(
     xaxis_tickangle=-45,
     bargap=0.3
 )
-fig.show()
+fig.add_annotation(
+    text=(
+        "Datagrunnlag: For hver arbeidstaker og leder har vi plukket ut den siste registrerte statusen basert på nyeste 'leder_created_at'-tidspunkt.<br>"
+        "Vi har filtrert bort rader uten registrert nærmeste leder.<br>"
+        "Figuren viser antall sykmeldte med lederstatus, gruppert per år og status."
+    ),
+    xref="paper", yref="paper",
+    x=0, y=-0.3,
+    showarrow=False,
+    font=dict(size=12, color="grey"),
+    align="left"
+)
 
+fig.show()
 
 # %% [markdown]
 
