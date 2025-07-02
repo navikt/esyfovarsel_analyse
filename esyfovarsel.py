@@ -20,6 +20,7 @@
 # %%
 #| echo: false
 import pandas as pd 
+import numpy as np
 import pandas_gbq 
 import sys
 import re
