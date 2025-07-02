@@ -33,8 +33,7 @@ from tools import (
     dwm_bar_plot,
     lag_sankey_fra_hendelser1,
     lag_hendelsesflyt_og_beregn_tid1,
-    utc_to_local,
-    dwm_bar_plot_with_prikk_og_diff
+    utc_to_local
 )
 
 import datetime as dt
@@ -308,10 +307,34 @@ t_g_e_k = get_dwmy_df(df[(df['type'] == 'SM_DIALOGMOTE_INNKALT') & (df['kanal'] 
 g_week_e = next(df for df, label in t_g_e_k if label == "Uke")
 g_week_i_nye = next(df for df, label in t_g_i_nye if label == "Uke")
 
-fig = dwm_bar_plot_with_prikk_og_diff([
-    (g_week_e[:-1], "e_syfo"),
-    (g_week_i_nye[:-1], "i_syfo")
-])
+ 
+
+df_e = g_week_e[:-1].rename(columns={'n_count': 'e_syfo'})
+df_i = g_week_i_nye[:-1].rename(columns={'n_count': 'i_syfo'})
+
+df_diff = df_i.merge(df_e, on='Tid', how='outer').fillna(0)
+df_diff['diff'] = df_diff['i_syfo'] - df_diff['e_syfo']
+
+
+df_diff['diff_plot'] = df_diff['diff'].apply(lambda x: x if x > 0 else np.nan)
+
+
+fig = px.bar(
+    df_diff,
+    x='Tid',
+    y='diff_plot',
+    #title='Positiv differanse per uke (i_syfo - e_syfo)',
+    labels={'Tid': 'Uke', 'diff_plot': 'Differanse'}
+)
+
+fig.update_layout(
+    xaxis=dict(title='Uke', type='category'),
+    yaxis=dict(title='Differanse'),
+    template='plotly_white',
+    width=900,
+    height=500
+)
+
 fig.show()
 
 # %% [markdown]
