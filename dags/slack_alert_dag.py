@@ -25,7 +25,7 @@ def get_n_rows_yesterday():
     import pandas_gbq
  
     project = 'teamsykefravr-prod-7e29'
-    d_sql = get_dict(base_path + "/esyfovarsel.sql")
+#    d_sql = get_dict(base_path + "/esyfovarsel.sql")
 
     sql = 'SELECT * FROM EXTERNAL_QUERY("team-esyfo-prod-bbe6.europe-north1.esyfovarsel", "SELECT utsendt_forsok_tidspunkt FROM utsending_varsel_feilet where utsendt_forsok_tidspunkt > \'2025-04-01\' and  is_resendt=false;")'
 
