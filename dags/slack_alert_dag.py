@@ -63,4 +63,6 @@ with DAG('overvakning',
 
     )
 
-t_feilet_status >>  t_varsling 
+    t_stop = EmptyOperator(task_id="stop_task", dag=dag)
+
+t_feilet_status >> t_stop >>  t_varsling 
