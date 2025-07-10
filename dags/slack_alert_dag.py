@@ -20,7 +20,7 @@ def get_n_rows_yesterday():
     import pandas_gbq
  
     project = 'teamsykefravr-prod-7e29'
-    d_sql = get_dict("esyfovarsel.sql")
+    d_sql = get_dict(base_path + "/" + "esyfovarsel.sql")
 
     df = pandas_gbq.read_gbq(d_sql['esyfovarsel_alt'], project_id=project)
 
