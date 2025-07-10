@@ -61,7 +61,12 @@ with DAG('overvakning',
         task_id="varsling",
         slack_conn_id="slack_connection",
         text=f"NB! Nye rader i esyfovarsel.utsendt_varsel_feilet i går. Ikke vellykket resending.",
-        channel="#syfortellinger-alert"
+        channel="#syfortellinger-alert",
+        executor_config={
+              "pod_override": k8s.V1Pod(
+                metadata=k8s.V1ObjectMeta(annotations={"allowlist": "slack.com"})
+              )
+            },
 
     )
 
