@@ -4,6 +4,9 @@ SELECT * FROM EXTERNAL_QUERY("team-esyfo-prod-bbe6.europe-north1.esyfovarsel", "
 /*esyfovarsel_feilet_utsending*/
 SELECT * FROM EXTERNAL_QUERY("team-esyfo-prod-bbe6.europe-north1.esyfovarsel", "SELECT cast(uuid as text), cast(uuid_ekstern_referanse as text), arbeidstaker_fnr, hendelsetype_navn, orgnummer,arbeidsgivernotifikasjon_merkelapp, brukernotifikasjoner_melding_type,kanal, feilmelding, utsendt_forsok_tidspunkt, is_forced_letter, is_resendt, resendt_tidspunkt FROM utsending_varsel_feilet;");
 
+/*esyfovarsel_feilet_utsending_yesterday*/
+SELECT * FROM EXTERNAL_QUERY("team-esyfo-prod-bbe6.europe-north1.esyfovarsel", "SELECT utsendt_forsok_tidspunkt FROM utsending_varsel_feilet where utsendt_forsok_tidspunkt > '2025-04-01' and  is_resendt=false;");
+
 /*esyfovarsel_kalenderavtale*/
 SELECT * FROM EXTERNAL_QUERY("team-esyfo-prod-bbe6.europe-north1.esyfovarsel", "SELECT cast(id as text), eksternid, sakid, grupperingsid, merkelapp, kalenderid, starttidspunkt, slutttidspunkt, kalenderavtaletilstand, harddeletedate, opprettet FROM arbeidsgivernotifikasjoner_kalenderavtale;");
 
