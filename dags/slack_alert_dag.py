@@ -14,24 +14,16 @@ from kubernetes import client as k8s
 
 def get_n_rows_yesterday():
 
-    if len(re.findall('/', os.getcwd())) == 5:
-        base_path = os.path.abspath(os.path.join(os.getcwd(), os.pardir, os.pardir))
-    else: 
-        base_path = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
-
-    sys.path.append(base_path)
-
-    from tools import get_dict 
     import pandas_gbq
  
     project = 'teamsykefravr-prod-7e29'
-#    d_sql = get_dict(base_path + "/esyfovarsel.sql")
 
-    sql = 'SELECT * FROM EXTERNAL_QUERY("team-esyfo-prod-bbe6.europe-north1.esyfovarsel", "SELECT utsendt_forsok_tidspunkt FROM utsending_varsel_feilet where utsendt_forsok_tidspunkt > \'2025-04-01\' and  is_resendt=false;")'
+    sql = 'SELECT * FROM EXTERNAL_QUERY("team-esyfo-prod-bbe6.europe-north1.esyfovarsel", "SELECT utsendt_forsok_tidspunkt FROM utsending_varsel_feilet where utsendt_forsok_tidspunkt > CURRENT_DATE - 1 and utsendt_forsok_tidspunkt < CURRENT_DATE;")'
 
     df = pandas_gbq.read_gbq(sql, project_id=project)
 
     return len(df)
+
 
 def varsel_status():
     
@@ -41,13 +33,14 @@ def varsel_status():
         ret= 'varsling'
     else:
         ret='stop_task'
+
     return ret
 
 
 
-with DAG('overvakning', 
-         start_date= datetime(2025, 7, 10),
-         end_date= datetime(2025, 7, 12)
+with DAG('overvakning',
+         schedule_interval = "0 4 * * *",
+         start_date = datetime(2025, 7, 10)
         ) as dag:
    
   
@@ -60,7 +53,7 @@ with DAG('overvakning',
     t_varsling = SlackAPIPostOperator(
         task_id="varsling",
         slack_conn_id="slack_connection",
-        text=f"NB! Nye rader i esyfovarsel.utsendt_varsel_feilet i går. Ikke vellykket resending.",
+        text=f"NB! Nye rader i esyfovarsel.utsendt_varsel_feilet i går. Ikke vellykket resending. Antall rader: {get_n_rows_yesterday()}",
         channel="#syfortellinger-alert",
         executor_config={
               "pod_override": k8s.V1Pod(
@@ -70,7 +63,4 @@ with DAG('overvakning',
 
     )
 
-    t_stop = EmptyOperator(task_id='stop_task', dag=dag)
-
-
-t_feilet_status >>  t_varsling >> t_stop 
+t_feilet_status >>  t_varsling 
