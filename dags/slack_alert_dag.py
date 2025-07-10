@@ -40,7 +40,7 @@ def varsel_status():
 
 with DAG('overvakning', 
          start_date= datetime(2025, 7, 10),
-         end_date= datetime(2025, 7, 10)
+         end_date= datetime(2025, 7, 12)
         ) as dag:
    
   
