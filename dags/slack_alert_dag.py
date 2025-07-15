@@ -16,17 +16,17 @@ from kubernetes import client as k8s
 
 
 def get_n_rows_yesterday(**context):
-    project = 'teamsykefravr-prod-7e29'
-    sql = '''
-    SELECT * FROM EXTERNAL_QUERY(
-        "team-esyfo-prod-bbe6.europe-north1.esyfovarsel",
-        "SELECT utsendt_forsok_tidspunkt FROM utsending_varsel_feilet 
-         WHERE utsendt_forsok_tidspunkt > CURRENT_DATE - 1 
-         AND utsendt_forsok_tidspunkt < CURRENT_DATE;"
-    )
-    '''
-    df = pandas_gbq.read_gbq(sql, project_id=project)
-    count = len(df)
+    # project = 'teamsykefravr-prod-7e29'
+    # sql = '''
+    # SELECT * FROM EXTERNAL_QUERY(
+    #     "team-esyfo-prod-bbe6.europe-north1.esyfovarsel",
+    #     "SELECT utsendt_forsok_tidspunkt FROM utsending_varsel_feilet 
+    #      WHERE utsendt_forsok_tidspunkt > CURRENT_DATE - 1 
+    #      AND utsendt_forsok_tidspunkt < CURRENT_DATE;"
+    # )
+    # '''
+    # df = pandas_gbq.read_gbq(sql, project_id=project)
+    count = 2 #len(df)
     context['ti'].xcom_push(key='row_count', value=count)
     return count
 
@@ -59,7 +59,7 @@ with DAG(
         task_id="varsling",
         slack_conn_id="slack_connection",
         channel="#syfortellinger-alert",
-        text="NB! Nye rader i esyfovarsel.utsendt_varsel_feilet i går. Antall rader: {{ ti.xcom_pull(task_ids='varsel_status', key='row_count') }}",
+        text="NB!Test Nye rader i esyfovarsel.utsendt_varsel_feilet i går. Antall rader: {{ ti.xcom_pull(task_ids='varsel_status', key='row_count') }}",
         executor_config={
             "pod_override": k8s.V1Pod(
                 metadata=k8s.V1ObjectMeta(annotations={"allowlist": "slack.com"})
