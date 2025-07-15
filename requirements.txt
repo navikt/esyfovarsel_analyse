@@ -4,11 +4,11 @@ aiofiles==24.1.0
     # via apache-airflow-providers-cncf-kubernetes
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.11.14
+aiohttp==3.12.14
     # via
     #   apache-airflow-providers-http
     #   kubernetes-asyncio
-aiosignal==1.3.2
+aiosignal==1.4.0
     # via aiohttp
 aiosqlite==0.21.0
     # via apache-airflow-providers-sqlite
@@ -653,6 +653,7 @@ traitlets==5.14.3
     #   nbformat
 typing-extensions==4.12.2
     # via
+    #   aiosignal
     #   aiosqlite
     #   alembic
     #   anyio
