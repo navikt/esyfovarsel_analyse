@@ -53,7 +53,7 @@ with DAG(
         task_id="varsling",
         slack_conn_id="slack_connection",
         channel="#syfortellinger-alert",
-        text="NB!Test Nye rader i esyfovarsel.utsendt_varsel_feilet i går. Antall rader: {{ ti.xcom_pull(task_ids='varsel_status', key='row_count') }}",
+        text="NB! Nye rader i esyfovarsel.utsendt_varsel_feilet i går. Antall rader: {{ ti.xcom_pull(task_ids='varsel_status', key='row_count') }}",
         executor_config={
             "pod_override": k8s.V1Pod(
                 metadata=k8s.V1ObjectMeta(annotations={"allowlist": "slack.com"})
