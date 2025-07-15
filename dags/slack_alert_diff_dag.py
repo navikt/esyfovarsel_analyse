@@ -59,7 +59,7 @@ with DAG(
 
     t_varsel_status = PythonOperator(
         task_id='varsel_status',
-        python_callable=varsel_status_test,
+        python_callable=varsel_status,
         provide_context=True,
     )
 
@@ -87,7 +87,7 @@ with DAG(
     t_varsel_status >> t_sjekk_slack_melding >> t_send_slack >> t_stop
 
 
-    
+
     '''
     len_esyfo = get_esyfo_n_rows_yesterday()
     len_dialogmote = get_dialogmote_n_rows_yesterday()
@@ -110,7 +110,7 @@ def sjekk_og_send_slack(**context):
 
     if status == 'varsling':
         # Returner meldingstekst som brukes i Slack-operator
-        return f"NB! Mindre rader i esyfo-utsendt_varsel-SM_DIALOGMOTE_INNKALT enn isyfo-dialogmote-INNKALT i går. Antall differanse: {diff}."
+        return f"NB! data differanse mellom esyfo-utsendt_varsel-SM_DIALOGMOTE_INNKALT og isyfo-dialogmote-INNKALT i går. Antall differanse: {diff}."
     else:
         # Returner None for å hoppe over Slack-meldingen
         return None
