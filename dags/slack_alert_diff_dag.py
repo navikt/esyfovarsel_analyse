@@ -35,9 +35,9 @@ SELECT * FROM EXTERNAL_QUERY(
 
 
 def varsel_status(**context):
-    len_esyfo = get_esyfo_n_rows_yesterday()
-    len_dialogmote = get_dialogmote_n_rows_yesterday()
-    diff = len_dialogmote - len_esyfo
+    #len_esyfo = get_esyfo_n_rows_yesterday()
+    #len_dialogmote = get_dialogmote_n_rows_yesterday()
+    diff =5 # len_dialogmote - len_esyfo
 
     status = 'varsling' if diff > 0 else 'stop_task'
 
