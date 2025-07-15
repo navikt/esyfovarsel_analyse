@@ -16,17 +16,17 @@ from kubernetes import client as k8s
 
 
 def get_n_rows_yesterday(**context):
-    # project = 'teamsykefravr-prod-7e29'
-    # sql = '''
-    # SELECT * FROM EXTERNAL_QUERY(
-    #     "team-esyfo-prod-bbe6.europe-north1.esyfovarsel",
-    #     "SELECT utsendt_forsok_tidspunkt FROM utsending_varsel_feilet 
-    #      WHERE utsendt_forsok_tidspunkt > CURRENT_DATE - 1 
-    #      AND utsendt_forsok_tidspunkt < CURRENT_DATE;"
-    # )
-    # '''
-    # df = pandas_gbq.read_gbq(sql, project_id=project)
-    count = 2 #len(df)
+    project = 'teamsykefravr-prod-7e29'
+    sql = '''
+    SELECT * FROM EXTERNAL_QUERY(
+        "team-esyfo-prod-bbe6.europe-north1.esyfovarsel",
+        "SELECT utsendt_forsok_tidspunkt FROM utsending_varsel_feilet 
+         WHERE utsendt_forsok_tidspunkt > CURRENT_DATE - 1 
+         AND utsendt_forsok_tidspunkt < CURRENT_DATE;"
+    )
+    '''
+    df = pandas_gbq.read_gbq(sql, project_id=project)
+    count = len(df)
     context['ti'].xcom_push(key='row_count', value=count)
     return count
 
