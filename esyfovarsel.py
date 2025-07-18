@@ -495,8 +495,6 @@ fig.show()
 
 gr_dialogmote = gr[gr['tjeneste'] == 'DIALOGMOTE']
 
-gr_dialogmote['varighetsgruppe'] = pd.Categorical(gr['varighetsgruppe'], categories=gruppe_rekkefølge, ordered=True)
-
 # --- 7. Plot med Plotly
 fig = px.bar(gr_dialogmote,
              x="varighetsgruppe",
@@ -545,6 +543,8 @@ fig.update_layout(xaxis_title='Varighetsgruppe',
                   yaxis_title='Antall',
                   legend_title='Har status')
 fig.show()
+
+
 
 # %% [markdown]
 # :::
