@@ -48,6 +48,7 @@ pio.renderers.default = ("plotly_mimetype+" + "notebook_connected+" + "iframe_co
 project = 'teamsykefravr-prod-7e29'
 d_sql = get_dict("esyfovarsel.sql")
 
+
 # %%
 #| echo: false
 #| output: false
@@ -74,8 +75,12 @@ df_fta = utc_to_local(df_fta)
 df_fta = get_date_formats(df_fta, "created_at")
 
 # alle mikrofrontend-synlighet
-df_s = pandas_gbq.read_gbq(d_sql['esyfovarsel_mikrofrontend_synlighet'],project_id=project)
-df_s = get_date_formats(df_s, "opprettet")
+df_m = pandas_gbq.read_gbq(d_sql['esyfovarsel_mikrofrontend_synlighet'],project_id=project)
+
+# alle dialogmote med Nytt Tid Sted isyfo
+df_n = pandas_gbq.read_gbq(d_sql['isyfo_dialog_status_endret_sykmeldte'],project_id=project)
+
+
 #%%
 print(f'Sist oppdatert: {dt.datetime.now().strftime("%Y-%m-%d %H:%M")}')
 
@@ -397,6 +402,155 @@ fig.show()
 
 # %% [markdown]
 # :::
+
+
+
+# %% [markdown]
+
+### Mikrofrontend synlighet
+
+# ::: {.panel-tabset}
+
+#### Antall opprettet synlighet i 2025
+
+# %%
+#| echo: false
+#| warning: false
+
+df_2025 = df_m[df_m['opprettet'] >= '2025-01-01'].copy()
+df_2025 = get_date_formats(df_2025, "opprettet")
+
+df_2025['uke_value'] = df_2025['yw'].str.split('-').str[1].astype(int)
+#df_2025['uke_label'] = 'Uke ' + df_2025['uke_value'].astype(str)
+
+counts = df_2025.groupby(['uke_value', 'tjeneste']).size().reset_index(name='antall')
+#counts['uke_sort'] = counts['uke_value'].str.extract(r'(\d+)').astype(int)
+#counts = counts.sort_values('uke_sort')
+
+fig = px.bar(
+    counts,
+    x='uke_value',
+    y='antall',
+    color='tjeneste',
+    barmode='stack',
+    #category_orders={'uke_label': counts['uke_label'].unique()},
+    labels={'uke_value': 'Uke', 'antall': 'Antall', 'tjeneste': 'Tjeneste'}
+)
+fig.update_layout(
+    xaxis_title='Uke',
+    yaxis_title='Antall',
+    legend_title_text='Tjeneste',
+    xaxis_tickangle=-45,
+    bargap=0.3
+)
+fig.show()
+
+# %% [markdown]
+#### Fordelling av tjenester etter synlighetsperiode i uker (2025)
+#%% 
+#| echo: false
+#| warning: false
+df_2025['synlig_uker'] =( (pd.to_datetime(df_2025['synlig_tom']) - pd.to_datetime(df_2025['opprettet'])).dt.days // 7)
+
+def grupper_varighet(uker):
+    if uker <= 6:
+        return "0-6 uker"
+    elif uker <= 15:
+        return "7-15 uker"
+    elif uker <= 30:
+        return "16-30 uker"
+    else:
+        return "Over 30 uker"
+
+df_2025['varighetsgruppe'] = df_2025['synlig_uker'].apply(grupper_varighet)
+
+
+gr = df_2025.groupby(['tjeneste', 'varighetsgruppe']).size().reset_index(name='antall')
+
+
+# --- 6. Sett ønsket rekkefølge på gruppene
+gruppe_rekkefølge = ["0-6 uker", "7-15 uker", "16-30 uker", "Over 30 uker"]
+gr['varighetsgruppe'] = pd.Categorical(gr['varighetsgruppe'], categories=gruppe_rekkefølge, ordered=True)
+
+# --- 7. Plot med Plotly
+fig = px.bar(gr,
+             x="varighetsgruppe",
+             y="antall",
+             color="tjeneste",
+             title="Tjenester fordelt på varighetsgrupper",
+             labels={
+                 "varighetsgruppe": "Varighet",
+                 "antall": "Antall",
+                 "tjeneste": "Tjeneste"
+             },
+             category_orders={"varighetsgruppe": gruppe_rekkefølge})
+
+fig.show()
+
+
+
+# %% [markdown]
+#### Fordelling av Dialogmøte etter synlighetsperiode i uker (2025)
+#%% 
+
+gr_dialogmote = gr[gr['tjeneste'] == 'DIALOGMOTE']
+
+gr_dialogmote['varighetsgruppe'] = pd.Categorical(gr['varighetsgruppe'], categories=gruppe_rekkefølge, ordered=True)
+
+# --- 7. Plot med Plotly
+fig = px.bar(gr_dialogmote,
+             x="varighetsgruppe",
+             y="antall",
+             #color="tjeneste",
+             title="Tjenester fordelt på varighetsgrupper",
+             labels={
+                 "varighetsgruppe": "Varighet",
+                 "antall": "Antall",
+                 #"tjeneste": "Tjeneste"
+             },
+             category_orders={"varighetsgruppe": gruppe_rekkefølge})
+
+fig.show()
+
+# %% [markdown]
+#### Grunn for Dialogmøte synlighet i over 30 uker (2025)
+### har den status NYTT_TID_STED?
+#%% 
+df_m_d = df_2025[(df_2025['tjeneste'] == 'DIALOGMOTE')].copy()
+
+
+df_n['created_at_mse'] = pd.to_datetime(df_n['created_at_mse'])
+
+
+# merge df_n med df_m_d_2025
+df_merge = df_m_d.merge(df_n, left_on='synlig_for', right_on='personident', how='left')   
+
+
+df_merge['har_status'] = df_merge['status'].notna()
+
+status_summary = df_merge.groupby(['varighetsgruppe', 'har_status']).size().reset_index(name='antall')
+status_summary['antall'].sum()
+fig= px.bar(status_summary,
+            x='varighetsgruppe',
+            y='antall',
+            color='har_status',
+            barmode='group',
+            text='antall',
+            labels={
+                'varighetsgruppe': 'Varighetsgruppe',
+                'antall': 'Antall',
+                'har_status': 'Har status'
+            })
+fig.update_layout(xaxis_title='Varighetsgruppe',
+                  yaxis_title='Antall',
+                  legend_title='Har status')
+fig.show()
+
+# %% [markdown]
+# :::
+
+
+
 # %% [markdown]
 # :::
 
