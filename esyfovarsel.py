@@ -80,6 +80,8 @@ df_m = pandas_gbq.read_gbq(d_sql['esyfovarsel_mikrofrontend_synlighet'],project_
 # alle dialogmote med Nytt Tid Sted isyfo
 df_n = pandas_gbq.read_gbq(d_sql['isyfo_dialog_status_endret_sykmeldte'],project_id=project)
 
+# alle dialogmote med alle status og personident isyfo
+df_n_f = pandas_gbq.read_gbq(d_sql['isyfo_alt_dialog_status_endret_sykmeldte'], project_id=project)
 
 #%%
 print(f'Sist oppdatert: {dt.datetime.now().strftime("%Y-%m-%d %H:%M")}')
@@ -544,6 +546,57 @@ fig.update_layout(xaxis_title='Varighetsgruppe',
                   legend_title='Har status')
 fig.show()
 
+# %% [markdown]
+#### Grunn for Dialogmøte synlighet i over 30 uker (2025)
+### fordelling av status i Dialogmøte
+#%% 
+
+# 2. Filtrer df_m: Kun 2025 og tjeneste = DIALOGMOTE
+#df_m['opprettet'] = pd.to_datetime(df_m['opprettet'])
+
+# 3. Sørg for at statusdata er datetime
+df_n_f['created_at_mse'] = pd.to_datetime(df_n_f['created_at_mse'])
+
+# 4. Hent siste status per personident
+df_n_f_latest = df_n_f.sort_values('created_at_mse').drop_duplicates('personident', keep='last')
+
+# 5. Merge: df_m_d + siste status per person
+df_merge = df_m_d.merge(
+    df_n_f_latest,
+    left_on='synlig_for',
+    right_on='personident',
+    how='left'
+)
+
+# 6. (Valgfritt) Erstatt NaN med "INGEN STATUS"
+df_merge['status'] = df_merge['status'].fillna('INGEN STATUS')
+
+# 7. Lag oppsummering: varighetsgruppe + status
+status_summary = df_merge.groupby(['varighetsgruppe', 'status']).size().reset_index(name='antall')
+
+# 8. Visualisering: Stacked bar chart
+fig = px.bar(
+    status_summary,
+    x='varighetsgruppe',
+    y='antall',
+    color='status',
+    barmode='stack',
+    text='antall',
+    labels={
+        'varighetsgruppe': 'Varighetsgruppe',
+        'antall': 'Antall',
+        'status': 'Status'
+    },
+    category_orders={"varighetsgruppe": gruppe_rekkefølge}
+)
+
+fig.update_layout(
+    xaxis_title='Varighetsgruppe',
+    yaxis_title='Antall',
+    legend_title='Status'
+)
+
+fig.show()
 
 
 # %% [markdown]
