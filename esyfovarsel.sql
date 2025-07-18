@@ -20,4 +20,7 @@ SELECT * FROM EXTERNAL_QUERY("teamsykefravr-prod-7e29.europe-north1.dialogmote",
 SELECT * FROM EXTERNAL_QUERY("teamsykefravr-prod-7e29.europe-north1.frisktilarbeid", "SELECT created_at FROM vedtak;");
 
 /*isyfo_dialog_status_endret_sykmeldte*/
-SELECT ms.status,ms.motedeltaker_behandler, ms.mote_id, ms.status, ma.personident, ms.created_at as created_at_mse, ma.created_at as created_as_ma FROM EXTERNAL_QUERY("teamsykefravr-prod-7e29.europe-north1.dialogmote", "SELECT * FROM MOTE_STATUS_ENDRET WHERE status = 'NYTT_TID_STED'") ms INNER JOIN EXTERNAL_QUERY("teamsykefravr-prod-7e29.europe-north1.dialogmote", "SELECT * FROM motedeltaker_arbeidstaker") ma ON ms.mote_id = ma.mote_id
+SELECT ms.status,ms.motedeltaker_behandler, ms.mote_id, ma.personident, ms.created_at as created_at_mse, ma.created_at as created_as_ma FROM EXTERNAL_QUERY("teamsykefravr-prod-7e29.europe-north1.dialogmote", "SELECT * FROM MOTE_STATUS_ENDRET WHERE status = 'NYTT_TID_STED'") ms INNER JOIN EXTERNAL_QUERY("teamsykefravr-prod-7e29.europe-north1.dialogmote", "SELECT * FROM motedeltaker_arbeidstaker") ma ON ms.mote_id = ma.mote_id;
+
+
+
