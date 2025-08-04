@@ -15,26 +15,54 @@ from airflow.providers.slack.operators.slack import SlackAPIPostOperator
 from kubernetes import client as k8s
 
 
-def get_n_rows_yesterday(**context):
-    project = 'teamsykefravr-prod-7e29'
-    sql = 'SELECT * FROM EXTERNAL_QUERY("team-esyfo-prod-bbe6.europe-north1.esyfovarsel", "SELECT utsendt_forsok_tidspunkt FROM utsending_varsel_feilet where utsendt_forsok_tidspunkt > CURRENT_DATE - 1 and utsendt_forsok_tidspunkt < CURRENT_DATE;")'
+# def get_n_rows_yesterday(**context):
+#     project = 'teamsykefravr-prod-7e29'
+#     sql = 'SELECT * FROM EXTERNAL_QUERY("team-esyfo-prod-bbe6.europe-north1.esyfovarsel", "SELECT utsendt_forsok_tidspunkt FROM utsending_varsel_feilet where utsendt_forsok_tidspunkt > CURRENT_DATE - 1 and utsendt_forsok_tidspunkt < CURRENT_DATE;")'
 
-    df = pandas_gbq.read_gbq(sql, project_id=project)
-    count = len(df)
-    context['ti'].xcom_push(key='row_count', value=count)
-    return count
+#     df = pandas_gbq.read_gbq(sql, project_id=project)
+#     count = len(df)
+#     context['ti'].xcom_push(key='row_count', value=count)
+#     return count
+
+def get_n_rows_yesterday(**context):
+    raise Exception("Testfeil - dette skal trigge Slack-varsling!")
 
 
 def skal_sendes_slack(**context):
     count = context['ti'].xcom_pull(task_ids='varsel_status', key='row_count')
     return count > 0  # Bare kjør videre hvis count > 0
 
+def send_failure_alert(context):
+    """
+    Sender Slack-melding hvis noen task i DAG feiler.
+    """
+    dag_id = context.get('dag').dag_id
+    task_id = context.get('task_instance').task_id
+    execution_date = context.get('execution_date')
+    log_url = context.get('task_instance').log_url
+
+    message = (
+        f":red_circle: DAG `{dag_id}` feilet!\n"
+        f"Task: `{task_id}`\n"
+        f"Kjøring: {execution_date}\n"
+        f"Se logg: {log_url}"
+    )
+
+    slack_alert = SlackAPIPostOperator(
+        task_id="slack_failure_alert",
+        slack_conn_id="slack_connection",  # Sett inn din Slack connection id her
+        channel="#syfortellinger-alert",         # Sett inn Slack-kanalen for feilvarsler
+        text=message,
+    )
+    slack_alert.execute(context=context)
+
 
 with DAG(
     'overvakning',
     schedule_interval="0 4 * * *",
     start_date=datetime(2025, 7, 10),
-    catchup=False
+    catchup=False,
+    on_failure_callback=send_failure_alert 
 ) as dag:
 
     t_feilet_status = PythonOperator(
