@@ -140,7 +140,7 @@ with DAG(
     t_varsling = SlackAPIPostOperator(
         task_id="varsling",
         slack_conn_id="slack_connection",
-        channel="#syfortellinger-alert",
+        channel="esyfo-data-alert",
         text="NB! Nye rader i `esyfovarsel.utsendt_varsel_feilet` i går. Antall rader: {{ ti.xcom_pull(task_ids='varsel_status', key='row_count') }}",
         executor_config={
             "pod_override": k8s.V1Pod(
