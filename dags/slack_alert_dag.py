@@ -221,11 +221,54 @@ import re
 #     feilende_task >> slack_ved_feil
 
 
+# from airflow import DAG
+# from airflow.operators.python import PythonOperator, ShortCircuitOperator
+# from airflow.providers.slack.operators.slack_webhook import SlackWebhookOperator
+# from airflow.utils.trigger_rule import TriggerRule
+# from datetime import datetime
+
+# def feilende_funksjon(**context):
+#     raise Exception("💥 Test-feil i feilende_task!")
+
+# def sjekk_dummy(**context):
+#     return True
+
+# with DAG(
+#     dag_id='test_dag_slack_webhook_feil',
+#     start_date=datetime(2025, 8, 1),
+#     schedule_interval=None,
+#     catchup=False,
+#     default_args={"retries": 0},
+# ) as dag:
+
+#     feilende_task = PythonOperator(
+#         task_id='feilende_task',
+#         python_callable=feilende_funksjon,
+#     )
+
+#     slack_ved_feil = SlackWebhookOperator(
+#         task_id='slack_ved_feil',
+#         slack_webhook_conn_id='slack_connection',  # <-- rett parameter her
+        
+#         message=":rotating_light: *Task `feilende_task` feilet i DAG `test_dag_slack_webhook_feil`!*",
+#         trigger_rule=TriggerRule.ONE_FAILED,
+#     )
+
+#     t_sjekk_send = ShortCircuitOperator(
+#         task_id='t_sjekk_send',
+#         python_callable=sjekk_dummy,
+#     )
+
+#     feilende_task >> [slack_ved_feil, t_sjekk_send]
+
+
+import os
 from airflow import DAG
 from airflow.operators.python import PythonOperator, ShortCircuitOperator
-from airflow.providers.slack.operators.slack_webhook import SlackWebhookOperator
+from airflow.providers.slack.operators.slack import SlackAPIPostOperator
 from airflow.utils.trigger_rule import TriggerRule
 from datetime import datetime
+from kubernetes import client as k8s
 
 def feilende_funksjon(**context):
     raise Exception("💥 Test-feil i feilende_task!")
@@ -234,7 +277,7 @@ def sjekk_dummy(**context):
     return True
 
 with DAG(
-    dag_id='test_dag_slack_webhook_feil',
+    dag_id='test_dag_slack_api_feil',
     start_date=datetime(2025, 8, 1),
     schedule_interval=None,
     catchup=False,
@@ -246,11 +289,17 @@ with DAG(
         python_callable=feilende_funksjon,
     )
 
-    slack_ved_feil = SlackWebhookOperator(
+    slack_ved_feil = SlackAPIPostOperator(
         task_id='slack_ved_feil',
-        slack_webhook_conn_id='slack_webhook',  # <-- rett parameter her
-        message=":rotating_light: *Task `feilende_task` feilet i DAG `test_dag_slack_webhook_feil`!*",
-        trigger_rule=TriggerRule.ONE_FAILED,
+        slack_conn_id='slack_connection',  # Airflow connection med Slack bot token
+        channel="#syfortellinger-alert",      # Sett kanal her
+        text=":rotating_light: *Task `feilende_task` feilet i DAG `test_dag_slack_api_feil`!*",
+        trigger_rule=TriggerRule.ONE_FAILED,  # Kjør om en foregående task feiler
+        executor_config={
+            "pod_override": k8s.V1Pod(
+                metadata=k8s.V1ObjectMeta(annotations={"allowlist": "slack.com"})
+            )
+        },
     )
 
     t_sjekk_send = ShortCircuitOperator(
@@ -258,4 +307,5 @@ with DAG(
         python_callable=sjekk_dummy,
     )
 
+    # Hvis feil i feilende_task, send slack alert, ellers kjør sjekk
     feilende_task >> [slack_ved_feil, t_sjekk_send]
