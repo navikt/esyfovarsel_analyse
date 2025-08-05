@@ -225,56 +225,52 @@ import re
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator, ShortCircuitOperator
-from airflow.providers.slack.operators.slack import SlackAPIPostOperator
+from airflow.providers.slack.operators.slack_webhook import SlackWebhookOperator
 from airflow.utils.trigger_rule import TriggerRule
 from datetime import datetime
 
 
-# Task 1: Feiler med vilje
+# Task 1: Feilende funksjon
 def feilende_funksjon(**context):
-    print("Denne tasken vil feile nå med vilje.")
+    print("Denne tasken vil feile med vilje.")
     raise Exception("💥 Test-feil i feilende_task!")
 
 
-# Task 2: Skal bare kjøres hvis forrige task er OK
+# Task 2: Dummy short-circuit task (kjører ikke siden første feiler)
 def sjekk_dummy(**context):
-    print("Denne skal aldri kjøre, fordi forrige task feiler.")
+    print("Skulle bare kjørt hvis feilende_task lykkes.")
     return True
 
 
-# DAG-definisjon
 with DAG(
-    dag_id='test_dag_med_feil_og_sjekk_send',
+    dag_id='test_dag_slack_webhook_feil',
     start_date=datetime(2025, 8, 1),
-    schedule_interval=None,  # Manuell kjøring
+    schedule_interval=None,
     catchup=False,
-    default_args={
-        "retries": 0  # Viktig: ingen retries så feil vises med én gang
-    },
+    default_args={"retries": 0},  # Ikke prøv på nytt – vi vil teste feil med en gang
 ) as dag:
 
-    # Task: Feilende task
+    # Feilende task
     feilende_task = PythonOperator(
         task_id='feilende_task',
         python_callable=feilende_funksjon,
         provide_context=True,
     )
 
-    # Task: Slack-alert hvis feil
-    slack_ved_feil = SlackAPIPostOperator(
+    # Slack-varsling ved feil
+    slack_ved_feil = SlackWebhookOperator(
         task_id='slack_ved_feil',
-        slack_conn_id='slack_connection',
-        channel='#syfortellinger-alert',
-        text=":rotating_light: *Task `feilende_task` feilet i DAG `test_dag_med_feil_og_sjekk_send`!*",
+        http_conn_id='slack_webhook',
+        message=":rotating_light: *Task `feilende_task` feilet i DAG `test_dag_slack_webhook_feil`!*",
         trigger_rule=TriggerRule.ONE_FAILED,
     )
 
-    # Task: En downstream ShortCircuitOperator som IKKE kjører hvis feil før
+    # Dummy sjekk (kjører ikke siden feilende_task feiler)
     t_sjekk_send = ShortCircuitOperator(
         task_id='t_sjekk_send',
         python_callable=sjekk_dummy,
         provide_context=True,
     )
 
-    # Avhengigheter
+    # Kjøring
     feilende_task >> [slack_ved_feil, t_sjekk_send]
