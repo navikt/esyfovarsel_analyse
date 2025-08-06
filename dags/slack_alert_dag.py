@@ -102,7 +102,7 @@ from kubernetes import client as k8s
 # Hent antall rader fra BigQuery
 def get_n_rows_yesterday(**context):
     project = 'teamsykefravr-prod-7e29'
-    sql = 'SELECT * FROM EXTERNAL_QUERY("team-esyfo-prod-bbe6.europe-north1.esyfovarsel", "SELECT utsendt_forsok_tidspunkt FROM utsending_varsel_feilet where utsendt_forsok_tidspunkt > CURRENT_DATE - 7 and utsendt_forsok_tidspunkt < CURRENT_DATE;")'
+    sql = 'SELECT * FROM EXTERNAL_QUERY("team-esyfo-prod-bbe6.europe-north1.esyfovarsel", "SELECT utsendt_forsok_tidspunkt FROM utsending_varsel_feilet where utsendt_forsok_tidspunkt > CURRENT_DATE - 8 and utsendt_forsok_tidspunkt < CURRENT_DATE;")'
 
     df = pandas_gbq.read_gbq(sql, project_id=project)
     count = len(df)
