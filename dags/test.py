@@ -95,7 +95,7 @@ with DAG(
     slack_ved_feil = SlackAPIPostOperator(
         task_id='slack_ved_feil',
         slack_conn_id='slack_connection',
-        channel='#syforellinger-alert',
+        channel='#syfortellinger-alert',
         text=":x: test varsel Feil i DAG `overvakning_test_diff`!* Se Airflow for detaljer.",
         trigger_rule=TriggerRule.ONE_FAILED,  # Kjør denne hvis en eller flere upstream-tasks feiler
         executor_config={
