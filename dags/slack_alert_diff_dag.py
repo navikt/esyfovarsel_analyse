@@ -116,7 +116,7 @@ def get_esyfo_n_rows_yesterday():
     sql = """
 SELECT * FROM EXTERNAL_QUERY(
     "team-esyfo-prod-bbe6.europe-north1.esyfovarsel",
-    "SELECT utsendt_tidspunkt, type, kanal FROM utsendt_varsel WHERE utsendt_tidspunkt > CURRENT_DATE - 1 AND utsendt_tidspunkt < CURRENT_DATE AND type = 'SM_DIALOGMOTE_INNKALT' AND kanal = 'DITT_SYKEFRAVAER';"
+    "SELECT utsendt_tidspunkt, type, kanal FROM utsendt_varsel WHERE utsendt_tidspunkt > CURRENT_DATE - 101 AND utsendt_tidspunkt < CURRENT_DATE AND type = 'SM_DIALOGMOTE_INNKALT' AND kanal = 'DITT_SYKEFRAVAER';"
 )
 """
     df = pandas_gbq.read_gbq(sql, project_id=project)
@@ -128,7 +128,7 @@ def get_dialogmote_n_rows_yesterday():
     sql = """
 SELECT * FROM EXTERNAL_QUERY(
     "teamsykefravr-prod-7e29.europe-north1.dialogmote",
-    "SELECT cast(id as text), cast(uuid as text), created_at, updated_at, cast(mote_id as text), status, opprettet_av, tilfelle_start, published_at, motedeltaker_behandler FROM mote_status_endret WHERE created_at > CURRENT_DATE - 1 AND created_at < CURRENT_DATE AND status = 'INNKALT';"
+    "SELECT cast(id as text), cast(uuid as text), created_at, updated_at, cast(mote_id as text), status, opprettet_av, tilfelle_start, published_at, motedeltaker_behandler FROM mote_status_endret WHERE created_at > CURRENT_DATE - 101 AND created_at < CURRENT_DATE AND status = 'INNKALT';"
 )
 """
     df = pandas_gbq.read_gbq(sql, project_id=project)
