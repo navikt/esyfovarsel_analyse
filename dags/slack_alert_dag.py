@@ -102,7 +102,7 @@ from kubernetes import client as k8s
 # Hent antall rader fra BigQuery
 def get_n_rows_yesterday(**context):
     project = 'teamsykefravr-prod-7e29'
-    sql = 'SELECT * FROM EXTERNAL_QUERY("team-esyfo-prod-bbe6.europe-north1.esyfovarsel", "SELECT utsendt_forsok_tidspunkt FROM utsending_varsel_feilet where utsendt_forsok_tidspunkt > CURRENT_DATE - 1 and utsendt_forsok_tidspunkt < CURRENT_DATE;")'
+    sql = 'SELECT * FROM EXTERNAL_QUERY("team-esyfo-prod-bbe6.europe-north1.esyfovarsel", "SELECT utsendt_forsok_tidspunkt FROM utsending_varsel_feilet where utsendt_forsok_tidspunkt > CURRENT_DATE - 7 and utsendt_forsok_tidspunkt < CURRENT_DATE;")'
 
     df = pandas_gbq.read_gbq(sql, project_id=project)
     count = len(df)
@@ -140,7 +140,7 @@ with DAG(
     t_varsling = SlackAPIPostOperator(
         task_id="varsling",
         slack_conn_id="slack_connection",
-        channel="#syfortellinger-alert",
+        channel="#esyfo-data-alert",
         text="NB! Nye rader i `esyfovarsel.utsendt_varsel_feilet` i går. Antall rader: {{ ti.xcom_pull(task_ids='varsel_status', key='row_count') }}",
         executor_config={
             "pod_override": k8s.V1Pod(
