@@ -77,7 +77,7 @@ with DAG(
     t_send_slack = SlackAPIPostOperator(
         task_id='send_slack',
         slack_conn_id='slack_connection',
-        channel='#esyfo-data-alert',
+        channel='#esyfoata-alert',
         text=(
             "NB!test varsel Data differanse mellom "
             "`esyfo-utsendt_varsel-SM_DIALOGMOTE_INNKALT` og "
@@ -95,7 +95,7 @@ with DAG(
     slack_ved_feil = SlackAPIPostOperator(
         task_id='slack_ved_feil',
         slack_conn_id='slack_connection',
-        channel='#syfortellinger-alert',
+        channel='#syforellinger-alert',
         text=":x: test varsel Feil i DAG `overvakning_test_diff`!* Se Airflow for detaljer.",
         trigger_rule=TriggerRule.ONE_FAILED,  # Kjør denne hvis en eller flere upstream-tasks feiler
         executor_config={
