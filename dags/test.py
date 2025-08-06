@@ -36,15 +36,16 @@ SELECT * FROM EXTERNAL_QUERY(
 
 
 def varsel_status(**context):
-    len_esyfo = get_esyfo_n_rows_yesterday()
-    len_dialogmote = get_dialogmote_n_rows_yesterday()
-    diff = len_dialogmote - len_esyfo
+    # len_esyfo = get_esyfo_n_rows_yesterday()
+    # len_dialogmote = get_dialogmote_n_rows_yesterday()
+    # diff = len_dialogmote - len_esyfo
 
-    status = 'varsling' if diff > 0 else 'stop_task'
+    # status = 'varsling' if diff > 0 else 'stop_task'
 
-    context['ti'].xcom_push(key='diff', value=diff)
-    context['ti'].xcom_push(key='status', value=status)
-    return status
+    # context['ti'].xcom_push(key='diff', value=diff)
+    # context['ti'].xcom_push(key='status', value=status)
+    # return status
+    raise Exception("Simulated failure for testing purposes.")
 
 
 def er_varsling(**context):
@@ -77,7 +78,7 @@ with DAG(
     t_send_slack = SlackAPIPostOperator(
         task_id='send_slack',
         slack_conn_id='slack_connection',
-        channel='#esyfoata-alert',
+        channel='#esyfo-data-alert',
         text=(
             "NB!test varsel Data differanse mellom "
             "`esyfo-utsendt_varsel-SM_DIALOGMOTE_INNKALT` og "
@@ -96,7 +97,7 @@ with DAG(
         task_id='slack_ved_feil',
         slack_conn_id='slack_connection',
         channel='#syfortellinger-alert',
-        text=":x: test varsel Feil i DAG `overvakning_test_diff`!* Se Airflow for detaljer.",
+        text=":error: test varsel Feil i DAG `overvakning_test_diff`!* Se Airflow for detaljer.",
         trigger_rule=TriggerRule.ONE_FAILED,  # Kjør denne hvis en eller flere upstream-tasks feiler
         executor_config={
             "pod_override": k8s.V1Pod(
