@@ -14,7 +14,7 @@ from kubernetes import client as k8s
 
 def get_n_rows_yesterday(**context):
     project = 'teamsykefravr-prod-7e29'
-    sql = 'SELECT * FROM EXTERNAL_QUERY("team-esyfo-prod-bbe6.europe-north1.esyfovarsel", "SELECT utsendt_forsok_tidspunkt FROM utsending_varsel_feilet where utsendt_forsok_tidspunkt > CURRENT_DATE - 1 and utsendt_forsok_tidspunkt < CURRENT_DATE;")'
+    sql = 'SELECT * FROM EXTERNAL_QUERY("team-esyfo-prod-bbe6.europe-north1.esyfovarsel", "SELECT utsendt_forsok_tidspunkt FROM utsending_varsel_feilet where utsendt_forsok_tidspunkt > CURRENT_DATE - 3 and utsendt_forsok_tidspunkt < CURRENT_DATE;")'
 
     df = pandas_gbq.read_gbq(sql, project_id=project)
     count = len(df)
@@ -28,7 +28,7 @@ def skal_sendes_slack(**context):
 
 with DAG(
     dag_id='overvakning',
-    schedule_interval="0 4 * * *",
+    schedule_interval="0 15 * * *",
     start_date=datetime(2025, 7, 10),
     catchup=False,
     default_args={"retries": 1},
@@ -53,7 +53,9 @@ with DAG(
         task_id="varsling",
         slack_conn_id="slack_connection",
         channel="#esyfo-data-alert",
-        text="NB! Nye rader i `esyfovarsel.utsendt_varsel_feilet` i går. Antall rader: {{ ti.xcom_pull(task_ids='varsel_status', key='row_count') }}",
+        text = ("TEST: NB! Nye rader i `esyfovarsel.utsendt_varsel_feilet` i går. "
+    "Antall rader: {{ ti.xcom_pull(task_ids='varsel_status', key='row_count') }}\n"
+    "@esyfo_utviklere"),
         executor_config={
             "pod_override": k8s.V1Pod(
                 metadata=k8s.V1ObjectMeta(annotations={"allowlist": "slack.com"})
